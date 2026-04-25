@@ -36,10 +36,18 @@ import {
   MenuSquare,
   Plus,
   Trash2,
+  Upload,
+  FileDown,
+  FileSpreadsheet,
+  FileJson,
+  FileUp,
   X
 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import { Department, PatientRecord, FilmStockDaily, SystemSettings, BottomNavItem, NavStyle } from './types';
 import { auth, signIn, signOut } from './lib/firebase';
 import { subscribeToPatientRecords, addPatientRecord, subscribeToManualStocks, ManualStockEntry, updateManualStock, deletePatientRecord, subscribeToRadiographers, subscribeToSystemSettings, updateSystemSettings } from './lib/db';
@@ -70,14 +78,16 @@ function generateFilmStock(daysInMonth: number, monthPrefix: string, startBf: nu
       .filter(r => (r.filmSize === filmType || (r.filmType === filmType && !r.filmSize)) && r.date === date)
       .reduce((sum, r) => sum + r.count, 0);
       
-    // Manual receive/waste
+    // Manual receive/waste/bf
     const manual = manualStocks.find(s => s.filmType === filmType && s.date === date);
     const receive = manual?.receive || 0;
     const waste = manual?.waste || 0;
+    const mb = (manual as any)?.bf; // Use manual bf if provided
     
-    const balance = bf + receive - use - waste;
+    const currentBf = mb !== undefined ? mb : bf;
+    const balance = currentBf + receive - use - waste;
     
-    result.push({ date, bf, receive, use, waste, balance });
+    result.push({ date, bf: currentBf, receive, use, waste, balance });
     bf = balance;
   }
   return result;
@@ -118,73 +128,119 @@ const LoginForm = ({ systemSettings }: { systemSettings: SystemSettings }) => {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center bg-slate-900 overflow-hidden relative">
-      <div className="absolute inset-0 z-0 opacity-20">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50" />
+    <div className="flex h-screen items-center justify-center bg-[#0f172a] overflow-hidden relative font-sans antialiased">
+      {/* Decorative Blur Background */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <motion.div 
+          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.3, 0.2], x: [0, 50, 0], y: [0, 30, 0] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600 rounded-full mix-blend-screen filter blur-[120px]" 
+        />
+        <motion.div 
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.1, 0.2, 0.1], x: [0, -40, 0], y: [0, -20, 0] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-500 rounded-full mix-blend-screen filter blur-[120px]" 
+        />
       </div>
-      <div className="bg-white p-8 sm:p-10 rounded-2xl shadow-2xl max-w-md w-full text-center relative z-10 border border-white/20">
-        <div className="mb-6 flex justify-center">
+
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "circOut" }}
+        className="bg-white/10 backdrop-blur-2xl p-8 sm:p-12 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center relative z-10 border border-white/10"
+      >
+        <div className="mb-8 flex justify-center">
           {systemSettings.loginLogoUrl ? (
-            <img src={systemSettings.loginLogoUrl} alt="Logo" className="h-20 w-auto object-contain" referrerPolicy="no-referrer" />
+            <div className="relative group">
+              <div className="absolute inset-0 bg-blue-600/20 blur-xl group-hover:bg-blue-600/30 transition-all rounded-full" />
+              <img src={systemSettings.loginLogoUrl} alt="Logo" className="h-24 w-auto object-contain relative z-10" referrerPolicy="no-referrer" />
+            </div>
           ) : (
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-emerald-50 rounded-2xl flex items-center justify-center shadow-inner border border-blue-100/50">
-              <Scan className="w-10 h-10 text-blue-600" />
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-600/40 rotate-6 hover:rotate-0 transition-transform duration-500">
+              <Activity className="w-10 h-10 text-white" />
             </div>
           )}
         </div>
-        <h1 className="text-3xl font-black text-slate-800 mb-2 tracking-tight uppercase leading-tight">
+        
+        <h1 className="text-3xl font-black text-white mb-2 tracking-tighter uppercase leading-tight">
           {systemSettings.hospitalName}
         </h1>
-        <p className="text-slate-500 mb-8 font-medium">Log into radiographer account</p>
+        <div className="flex items-center justify-center gap-2 mb-10">
+          <div className="h-[2px] w-8 bg-blue-500/50 rounded-full" />
+          <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.3em]">
+            Radiology Portal
+          </p>
+          <div className="h-[2px] w-8 bg-blue-500/50 rounded-full" />
+        </div>
         
-        {error && <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl font-medium">{error}</div>}
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mb-8 p-4 bg-red-500/20 border border-red-500/30 text-red-100 text-xs rounded-2xl font-bold flex items-center gap-3 backdrop-blur-md"
+          >
+            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+            <span className="text-left">{error}</span>
+          </motion.div>
+        )}
         
-        <form onSubmit={handleLogin} className="space-y-4 mb-8 text-left">
-           <div>
-             <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Username / Email</label>
-             <input 
-               type="text" 
-               value={username}
-               onChange={e => setUsername(e.target.value)}
-               className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all font-medium text-slate-800 placeholder:text-slate-400"
-               placeholder="Enter identifier"
-             />
+        <form onSubmit={handleLogin} className="space-y-6 mb-8 text-left">
+           <div className="space-y-2">
+             <label className="block text-[10px] font-black text-blue-300 uppercase tracking-[0.2em] ml-1">Technician Identifier</label>
+             <div className="relative group">
+               <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-blue-400 transition-colors" />
+               <input 
+                 type="text" 
+                 value={username}
+                 onChange={e => setUsername(e.target.value)}
+                 className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl focus:bg-white/10 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-white placeholder:text-white/20"
+                 placeholder="Enter ID or Email"
+               />
+             </div>
            </div>
-           <div>
-             <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Password</label>
-             <input 
-               type="password" 
-               value={password}
-               onChange={e => setPassword(e.target.value)}
-               className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all font-medium text-slate-800 placeholder:text-slate-400"
-               placeholder="••••••••"
-             />
+           <div className="space-y-2">
+             <label className="block text-[10px] font-black text-blue-300 uppercase tracking-[0.2em] ml-1">Security Key</label>
+             <div className="relative group">
+               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-blue-400 transition-colors" />
+               <input 
+                 type="password" 
+                 value={password}
+                 onChange={e => setPassword(e.target.value)}
+                 className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl focus:bg-white/10 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-white placeholder:text-white/20"
+                 placeholder="••••••••"
+               />
+             </div>
            </div>
            <button 
              type="submit"
              disabled={isLoading}
-             className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-900/30 disabled:opacity-70 mt-2"
+             className="relative group w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 px-4 rounded-2xl transition-all flex items-center justify-center gap-3 overflow-hidden shadow-xl shadow-blue-900/40 disabled:opacity-70 active:scale-[0.98] mt-2 uppercase tracking-widest text-sm"
            >
-             {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <LogIn className="w-5 h-5" />}
-             Sign In
+             {isLoading ? (
+               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+             ) : (
+               <>
+                 <LogIn className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                 Authenticate
+               </>
+             )}
            </button>
         </form>
         
         <div className="relative mb-8">
-          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
-          <div className="relative flex justify-center"><span className="bg-white px-4 text-xs font-bold uppercase tracking-widest text-slate-400">Or</span></div>
+          <div className="absolute inset-0 flex items-center px-4"><div className="w-full border-t border-white/10" /></div>
+          <div className="relative flex justify-center"><span className="bg-[#1e293b]/50 backdrop-blur-md px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-white/30 border border-white/5">Secured By Cloud v2.0</span></div>
         </div>
 
         <button 
           onClick={signIn}
           type="button"
-          className="w-full bg-white hover:bg-slate-50 border-2 border-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-3"
+          className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-4 px-4 rounded-2xl transition-all flex items-center justify-center gap-3 active:scale-[0.98] uppercase tracking-widest text-[11px]"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" /><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg>
-          Admin Login with Google
+          Admin Login
         </button>
-      </div>
+      </motion.div>
     </div>
   );
 };
@@ -589,7 +645,7 @@ export default function App() {
                   </div>
                 </motion.div>
               )}
-              {activeTab === 'DATA MANAGEMENT' && <div key="data-management"><DataManagementDashboard records={records} onDeleteRecord={handleDeleteRecord} /></div>}
+              {activeTab === 'DATA MANAGEMENT' && <div key="data-management"><DataManagementDashboard records={records} onDeleteRecord={handleDeleteRecord} onAddRecord={handleAddRecord} /></div>}
               {activeTab === 'RADIOGRAPHERS' && <div key="radiographers"><RadiographersDashboard radiographers={radiographers} /></div>}
               {activeTab === 'SYSTEM SETTINGS GENERAL' && <div key="system-settings-general"><SystemSettingsDashboard records={records} /></div>}
               {activeTab === 'SYSTEM SETTINGS HOSPITAL' && <div key="system-settings-hospital"><HospitalSettingsDashboard systemSettings={systemSettings} /></div>}
@@ -1535,7 +1591,7 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
     age: '',
     invoice: '',
     filmType: department === 'DIGITAL X-RAY' ? 'Chest' : department,
-    filmSize: department.includes('14x17') ? '14x17' : department.includes('11x14') ? '11x14' : '14x17',
+    filmSize: department === 'OPG' ? '11x14' : (department.includes('14x17') ? '14x17' : department.includes('11x14') ? '11x14' : '14x17'),
     count: 1,
     radiographer: radiographers.length > 0 ? radiographers[0].name : 'Technician'
   });
@@ -1551,7 +1607,7 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || isSubmitting) return;
+    if (!formData.invoice || isSubmitting) return;
 
     setIsSubmitting(true);
     setSubmitStatus('idle');
@@ -1600,7 +1656,7 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
              <div className="md:col-span-2 grid grid-cols-2 gap-3">
                <div className="col-span-2 space-y-1">
                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Patient Identity</label>
-                 <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all" placeholder="Patient Name" required />
+                 <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all" placeholder="Patient Name" />
                </div>
                <div className="space-y-1">
                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Age</label>
@@ -1608,18 +1664,20 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
                </div>
                <div className="space-y-1">
                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Invoice</label>
-                 <input type="text" value={formData.invoice} onChange={e => setFormData({...formData, invoice: e.target.value.toUpperCase()})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all uppercase" placeholder="INV-001" />
+                 <input type="text" value={formData.invoice} onChange={e => setFormData({...formData, invoice: e.target.value.toUpperCase()})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all uppercase" placeholder="INV-001" required />
                </div>
              </div>
 
-             <div className="md:col-span-2 grid grid-cols-2 gap-3">
+               <div className="md:col-span-2 grid grid-cols-2 gap-3">
                <div className="space-y-1">
-                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">{department === 'DIGITAL X-RAY' ? 'Film Size' : 'Option'}</label>
-                 <select value={department === 'DIGITAL X-RAY' ? formData.filmSize : formData.filmType} onChange={e => setFormData({...formData, [department === 'DIGITAL X-RAY' ? 'filmSize' : 'filmType']: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all appearance-none">
-                    {department === 'DIGITAL X-RAY' ? (
+                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">{['DIGITAL X-RAY', 'OPG'].includes(department) ? 'Film Size' : 'Option'}</label>
+                 <select value={['DIGITAL X-RAY', 'OPG'].includes(department) ? formData.filmSize : formData.filmType} onChange={e => setFormData({...formData, [['DIGITAL X-RAY', 'OPG'].includes(department) ? 'filmSize' : 'filmType']: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all appearance-none">
+                    {department === 'OPG' ? (
+                      <option value="11x14">11x14</option>
+                    ) : department === 'DIGITAL X-RAY' ? (
                       <>
-                        <option value="14x17">14x17</option>
                         <option value="11x14">11x14</option>
+                        <option value="14x17">14x17</option>
                         <option value="10x12">10x12</option>
                         <option value="8x10">8x10</option>
                         <option value="12x15">12x15</option>
@@ -1630,11 +1688,11 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
                  </select>
                </div>
                <div className="space-y-1">
-                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">{department === 'DIGITAL X-RAY' ? 'X-Ray Type' : 'Qty'}</label>
+                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">{department === 'DIGITAL X-RAY' ? 'X-Ray Type' : ''}</label>
                  {department === 'DIGITAL X-RAY' ? (
                    <input type="text" value={formData.filmType} onChange={e => setFormData({...formData, filmType: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all" placeholder="Ex: Chest" />
                  ) : (
-                   <input type="number" min="1" value={formData.count} onChange={e => setFormData({...formData, count: Number(e.target.value)})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-black text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all" />
+                   <div className="w-full h-[38px]" />
                  )}
                </div>
                <div className="col-span-2 space-y-1">
@@ -1648,12 +1706,6 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
              </div>
 
              <div className="flex flex-col gap-3 justify-end">
-               {department === 'DIGITAL X-RAY' && (
-                 <div className="space-y-1">
-                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Qty</label>
-                   <input type="number" min="1" value={formData.count} onChange={e => setFormData({...formData, count: Number(e.target.value)})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-black text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all" />
-                 </div>
-               )}
                <button type="submit" className="w-full bg-slate-900 text-white font-black py-2.5 rounded-lg active:scale-95 transition-all shadow-md text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2">
                  <PlusCircle className="w-3.5 h-3.5" /> Push Record
                </button>
@@ -1730,7 +1782,7 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
 function FilmSummaryDashboard({ view, selectedMonth, onMonthChange, stock14x17, stock11x14, manualStocks }: { view: '14x17' | '11x14', selectedMonth: string, onMonthChange: (m: string) => void, stock14x17: FilmStockDaily[], stock11x14: FilmStockDaily[], manualStocks: ManualStockEntry[] }) {
   
   const StockTable = ({ title, filmType, data, totalUse, totalBalance, totalReceived, totalWaste }: { title: string, filmType: string, data: FilmStockDaily[], totalUse: number, totalBalance: number, totalReceived: number, totalWaste: number }) => {
-    const handleUpdate = async (date: string, field: 'receive' | 'waste', value: string) => {
+    const handleUpdate = async (date: string, field: 'receive' | 'waste' | 'bf', value: string) => {
       const numValue = parseInt(value, 10) || 0;
       const existing = manualStocks.find(s => s.filmType === filmType && s.date === date);
       const stockEntry: ManualStockEntry = {
@@ -1738,6 +1790,7 @@ function FilmSummaryDashboard({ view, selectedMonth, onMonthChange, stock14x17, 
         filmType,
         receive: existing?.receive || 0,
         waste: existing?.waste || 0,
+        bf: (existing as any)?.bf
       };
       stockEntry[field] = numValue;
       await updateManualStock(stockEntry);
@@ -1804,7 +1857,15 @@ function FilmSummaryDashboard({ view, selectedMonth, onMonthChange, stock14x17, 
           {data.map((row) => (
             <div key={row.date} className="grid grid-cols-6 gap-0 text-[10px] lg:text-sm border-b border-slate-200/40 hover:bg-white transition-colors relative z-10 divide-x divide-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
               <div className="px-2 lg:px-4 py-2 lg:py-3 text-slate-400 font-bold text-center flex items-center justify-center">{row.date.split('-')[2]}</div>
-              <div className="px-2 lg:px-4 py-2 lg:py-3 text-slate-700 text-center font-black bg-slate-100/20 flex items-center justify-center">{row.bf || '-'}</div>
+              <div className="p-0.5 lg:p-1 bg-slate-100/20">
+                <input 
+                  type="number" min="0" 
+                  value={row.bf || ''} 
+                  onChange={(e) => handleUpdate(row.date, 'bf', e.target.value)}
+                  className="w-full h-full text-center py-1 lg:py-2 bg-transparent hover:bg-white text-slate-700 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500/30 rounded font-black transition-all placeholder:text-slate-200"
+                  placeholder="-"
+                />
+              </div>
               <div className="items-center justify-center p-0.5 lg:p-1 bg-white">
                 <input 
                   type="number" min="0" 
@@ -1871,19 +1932,21 @@ function FilmSummaryDashboard({ view, selectedMonth, onMonthChange, stock14x17, 
   );
 }
 
-function DataManagementDashboard({ records, onDeleteRecord }: { records: PatientRecord[], onDeleteRecord: (id: string) => void }) {
+function DataManagementDashboard({ records, onDeleteRecord, onAddRecord }: { records: PatientRecord[], onDeleteRecord: (id: string) => void, onAddRecord: (record: Omit<PatientRecord, 'id'>) => Promise<void> }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [importStatus, setImportStatus] = useState<{ success: boolean; message: string } | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
   
-  const filteredRecords = records.filter(r => 
+  const filteredRecords = useMemo(() => records.filter(r => 
     r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     r.invoice.toLowerCase().includes(searchTerm.toLowerCase()) ||
     r.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
     r.date.includes(searchTerm)
-  );
+  ), [records, searchTerm]);
 
   const handleExportCSV = () => {
-    const headers = "Date,Patient Name,Age,Invoice,Department,Film Type,Count,Radiographer\n";
-    const csv = records.map(r => `"${r.date}","${r.name}","${r.age}","${r.invoice}","${r.department}","${r.filmType}",${r.count},"${r.radiographer}"`).join('\n');
+    const headers = "Date,Department,Patient Name,Age,Invoice,Study,Size,Qty,Radiographer\n";
+    const csv = records.map(r => `"${r.date}","${r.department}","${r.name}","${r.age}","${r.invoice}","${r.filmType}","${r.filmSize || ''}",${r.count},"${r.radiographer}"`).join('\n');
     const blob = new Blob([headers + csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1891,6 +1954,167 @@ function DataManagementDashboard({ records, onDeleteRecord }: { records: Patient
     a.download = `hospital_records_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleExportJSON = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(records, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href",     dataStr);
+    downloadAnchorNode.setAttribute("download", `hospital_records_${new Date().toISOString().split('T')[0]}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
+  const handleExportExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(records.map(r => ({
+      Date: r.date,
+      Department: r.department,
+      'Patient Name': r.name,
+      Age: r.age,
+      Invoice: r.invoice,
+      Study: r.filmType,
+      Size: r.filmSize || '',
+      Quantity: r.count,
+      Radiographer: r.radiographer
+    })));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Records");
+    XLSX.writeFile(workbook, `hospital_records_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    doc.setFontSize(18);
+    doc.text('Hospital Radiology Records', 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+    
+    (doc as any).autoTable({
+      startY: 40,
+      head: [['Date', 'Dept', 'Patient Name', 'Age', 'Invoice', 'Study', 'Size', 'Qty', 'Radiographer']],
+      body: filteredRecords.map(r => [
+        r.date, 
+        r.department, 
+        r.name, 
+        r.age, 
+        r.invoice, 
+        r.filmType, 
+        r.filmSize || '', 
+        r.count, 
+        r.radiographer
+      ]),
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      styles: { fontSize: 8, cellPadding: 3 },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        2: { cellWidth: 40 },
+        8: { cellWidth: 30 }
+      }
+    });
+
+    doc.save(`hospital_records_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    setImportStatus(null);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const content = event.target?.result as string;
+        const data = JSON.parse(content);
+        
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid format: Data must be an array of records');
+        }
+
+        let importedCount = 0;
+        let errorCount = 0;
+
+        for (const item of data) {
+          try {
+            // Minimal validation
+            if (item.name && item.invoice && item.department) {
+              const { id, ...recordToStore } = item; // Remove ID if present to let Firebase generate a new one
+              await onAddRecord(recordToStore);
+              importedCount++;
+            }
+          } catch (err) {
+            errorCount++;
+          }
+        }
+
+        setImportStatus({ 
+          success: true, 
+          message: `Successfully imported ${importedCount} records.${errorCount > 0 ? ` Failed: ${errorCount}` : ''}` 
+        });
+      } catch (err) {
+        setImportStatus({ success: false, message: 'Failed to import records. Please check the file format.' });
+      } finally {
+        setIsImporting(false);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    setImportStatus(null);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const content = event.target?.result;
+        const workbook = XLSX.read(content, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const data = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+        let importedCount = 0;
+        let errorCount = 0;
+
+        for (const item of data) {
+          try {
+            // Map Excel columns to record fields if they exist
+            const recordToStore: Omit<PatientRecord, 'id'> = {
+              date: item.Date || item.date || new Date().toISOString().split('T')[0],
+              department: item.Department || item.department || 'DIGITAL X-RAY',
+              name: item['Patient Name'] || item.name || 'Unknown',
+              age: String(item.Age || item.age || ''),
+              invoice: String(item.Invoice || item.invoice || ''),
+              filmType: item.Study || item.filmType || 'Chest',
+              filmSize: item.Size || item.filmSize || '',
+              count: Number(item.Quantity || item.count || 1),
+              radiographer: item.Radiographer || item.radiographer || 'Technician',
+              userId: auth.currentUser?.uid || ''
+            };
+
+            await onAddRecord(recordToStore);
+            importedCount++;
+          } catch (err) {
+            errorCount++;
+          }
+        }
+
+        setImportStatus({ 
+          success: true, 
+          message: `Successfully imported ${importedCount} records from Excel.${errorCount > 0 ? ` Failed: ${errorCount}` : ''}` 
+        });
+      } catch (err) {
+        setImportStatus({ success: false, message: 'Failed to import Excel. Please check the file format.' });
+      } finally {
+        setIsImporting(false);
+      }
+    };
+    reader.readAsBinaryString(file);
   };
 
   return (
@@ -1905,22 +2129,44 @@ function DataManagementDashboard({ records, onDeleteRecord }: { records: Patient
         <div className="relative z-10">
            <h3 className="text-xs sm:text-base font-black text-white tracking-[0.2em] flex items-center gap-2 uppercase">
              <Database className="w-4 h-4 text-blue-400" />
-             Data Archive
+             Data Management
            </h3>
         </div>
-        <div className="relative z-10 flex items-center gap-2">
-           <button 
-             onClick={handleExportCSV}
-             className="flex items-center gap-2 bg-blue-600/20 hover:bg-blue-600 border border-blue-500/50 hover:border-transparent text-blue-300 hover:text-white px-3 py-1.5 rounded-lg font-black tracking-widest text-[9px] transition-all uppercase"
-           >
-             <Download className="w-3.5 h-3.5" />
-             Export
-           </button>
-           <div className="text-[9px] sm:text-[10px] text-slate-400 font-bold bg-slate-800/50 border border-slate-700/50 px-2 py-1 rounded uppercase tracking-widest shrink-0">
-              <span className="text-blue-400 font-black">{filteredRecords.length}</span> Results
-           </div>
+        <div className="relative z-10 flex flex-wrap items-center gap-2">
+            <div className="flex bg-slate-800/50 p-1 rounded-lg border border-slate-700/50">
+               <button onClick={handleExportPDF} title="Export PDF" className="p-1.5 hover:bg-blue-600/20 text-slate-400 hover:text-blue-400 rounded transition-colors"><FileDown className="w-4 h-4" /></button>
+               <button onClick={handleExportExcel} title="Export Excel" className="p-1.5 hover:bg-green-600/20 text-slate-400 hover:text-green-400 rounded transition-colors"><FileSpreadsheet className="w-4 h-4" /></button>
+               <button onClick={handleExportCSV} title="Export CSV" className="p-1.5 hover:bg-amber-600/20 text-slate-400 hover:text-amber-400 rounded transition-colors"><FileDown className="w-4 h-4 rotate-90" /></button>
+               <button onClick={handleExportJSON} title="Export JSON" className="p-1.5 hover:bg-purple-600/20 text-slate-400 hover:text-purple-400 rounded transition-colors"><FileJson className="w-4 h-4" /></button>
+            </div>
+            
+            <label className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg font-black tracking-widest text-[9px] transition-all uppercase cursor-pointer shadow-lg shadow-green-600/20">
+              {isImporting ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2 }}><Database className="w-3.5 h-3.5" /></motion.div> : <FileSpreadsheet className="w-3.5 h-3.5" />}
+              Import Excel
+              <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleImportExcel} disabled={isImporting} />
+            </label>
+
+            <label className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg font-black tracking-widest text-[9px] transition-all uppercase cursor-pointer shadow-lg shadow-blue-600/20">
+              {isImporting ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2 }}><Database className="w-3.5 h-3.5" /></motion.div> : <FileUp className="w-3.5 h-3.5" />}
+              Import JSON
+              <input type="file" accept=".json" className="hidden" onChange={handleImportJSON} disabled={isImporting} />
+            </label>
+
+            <div className="text-[9px] sm:text-[10px] text-slate-400 font-bold bg-slate-800/50 border border-slate-700/50 px-2 py-1 rounded uppercase tracking-widest shrink-0">
+               <span className="text-blue-400 font-black">{filteredRecords.length}</span> Results
+            </div>
         </div>
       </div>
+
+      {importStatus && (
+        <div className={`mx-4 sm:mx-8 mt-4 p-3 rounded-lg border text-[10px] font-bold uppercase tracking-widest flex items-center justify-between ${importStatus.success ? 'bg-green-50 border-green-200 text-green-600' : 'bg-red-50 border-red-200 text-red-600'}`}>
+          <div className="flex items-center gap-2">
+            {importStatus.success ? <Plus className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+            {importStatus.message}
+          </div>
+          <button onClick={() => setImportStatus(null)} className="p-1 hover:bg-black/5 rounded"><X className="w-3.5 h-3.5" /></button>
+        </div>
+      )}
       
       <div className="px-4 sm:px-8 flex items-center gap-3 mt-2 shrink-0">
           <div className="relative flex-1">

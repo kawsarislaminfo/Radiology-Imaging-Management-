@@ -11,7 +11,9 @@ export interface PatientRecord {
   count: number;
   radiographer: string;
   department: Department;
+  userId?: string;
   createdAt?: any;
+  updatedAt?: any;
 }
 
 export interface FilmStockDaily {

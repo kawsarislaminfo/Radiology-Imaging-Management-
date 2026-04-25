@@ -171,6 +171,7 @@ export interface ManualStockEntry {
   filmType: string;
   receive: number;
   waste: number;
+  bf?: number;
 }
 
 export const subscribeToManualStocks = (onUpdate: (stocks: ManualStockEntry[]) => void) => {
