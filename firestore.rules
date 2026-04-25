@@ -1,0 +1,113 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Role check: Bootstrapped admin
+    function isAdmin() {
+      return isVerified() && (
+        request.auth.token.email == 'ebsoftopd@gmail.com'
+      );
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entities ---
+
+    // Patient Records
+    function isValidPatientRecord(data) {
+      let required = ['date', 'name', 'userId', 'createdAt', 'age', 'invoice', 'filmType', 'count', 'radiographer', 'department'];
+      return data.keys().hasAll(required) &&
+             data.keys().size() == required.size() &&
+             data.date is string && data.date.size() <= 20 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.userId == request.auth.uid &&
+             data.createdAt == request.time &&
+             data.age is string &&
+             data.invoice is string &&
+             data.filmType is string &&
+             data.count is number &&
+             data.radiographer is string &&
+             data.department is string;
+    }
+
+    match /patientRecords/{recordId} {
+      allow read: if isSignedIn();
+      allow create: if isVerified() && isValidId(recordId) && isValidPatientRecord(incoming());
+      allow update: if false; // Not allowed via UI
+      allow delete: if isAdmin() || (isVerified() && existing().userId == request.auth.uid);
+    }
+
+    // Film Stocks
+    function isValidFilmStock(data) {
+      let required = ['date', 'filmType', 'receive', 'use', 'waste', 'userId', 'updatedAt'];
+      return data.keys().hasAll(required) &&
+             data.keys().size() == required.size() &&
+             data.date is string && data.date.size() <= 20 &&
+             data.filmType is string &&
+             data.receive is number &&
+             data.use is number &&
+             data.waste is number &&
+             data.userId == request.auth.uid &&
+             data.updatedAt == request.time;
+    }
+
+    match /filmStocks/{stockId} {
+      allow read: if isSignedIn();
+      allow create, update: if isVerified() && isValidId(stockId) && isValidFilmStock(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Radiographers
+    function isValidRadiographer(data) {
+      // Create schema (no updatedAt yet)
+      let required = ['name', 'username', 'role', 'isActive', 'userId', 'createdAt'];
+      return data.keys().hasAll(required) &&
+             data.name is string && data.name.size() <= 100 &&
+             data.username is string &&
+             data.role in ['admin', 'radiographer'] &&
+             data.isActive is bool &&
+             data.userId == request.auth.uid &&
+             data.createdAt == request.time;
+    }
+
+    function isValidRadiographerUpdate(data) {
+       // Update schema (includes updatedAt)
+       return data.name is string &&
+              data.username is string &&
+              data.role in ['admin', 'radiographer'] &&
+              data.isActive is bool &&
+              data.updatedAt == request.time;
+    }
+
+    match /radiographers/{radId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() && isValidId(radId) && isValidRadiographer(incoming());
+      allow update: if isAdmin() && isValidRadiographerUpdate(incoming()) && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'username', 'phone', 'specialization', 'role', 'isActive', 'updatedAt']);
+      allow delete: if isAdmin();
+    }
+  }
+}

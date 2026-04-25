@@ -1,0 +1,68 @@
+{
+  "entities": {
+    "radiographer": {
+      "title": "Radiographer",
+      "description": "A radiographer or admin user record.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "username": { "type": "string" },
+        "phone": { "type": "string" },
+        "specialization": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "radiographer"] },
+        "isActive": { "type": "boolean" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "number", "description": "Timestamp" },
+        "updatedAt": { "type": "number", "description": "Timestamp" }
+      },
+      "required": ["name", "username", "role", "isActive", "userId", "createdAt"]
+    },
+    "patientRecord": {
+      "title": "Patient Record",
+      "description": "A single patient record associated with a department.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "name": { "type": "string" },
+        "age": { "type": "string" },
+        "invoice": { "type": "string" },
+        "filmType": { "type": "string" },
+        "count": { "type": "number" },
+        "radiographer": { "type": "string" },
+        "department": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "number", "description": "Timestamp" }
+      },
+      "required": ["date", "name", "userId", "createdAt"]
+    },
+    "filmStock": {
+      "title": "Film Stock Record",
+      "description": "Stock changes for 14x17 and 11x14.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "filmType": { "type": "string" },
+        "receive": { "type": "number" },
+        "use": { "type": "number" },
+        "waste": { "type": "number" },
+        "userId": { "type": "string" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["date", "filmType", "userId", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "radiographers/{radId}": {
+      "schema": { "$ref": "#/entities/radiographer" },
+      "description": "Store radiographer user details"
+    },
+    "patientRecords/{recordId}": {
+      "schema": { "$ref": "#/entities/patientRecord" },
+      "description": "Store patient records"
+    },
+    "filmStocks/{stockId}": {
+      "schema": { "$ref": "#/entities/filmStock" },
+      "description": "Store film stock updates"
+    }
+  }
+}

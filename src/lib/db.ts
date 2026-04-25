@@ -1,0 +1,163 @@
+import { collection, doc, query, where, getDocs, setDoc, onSnapshot, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { db, handleFirestoreError, OperationType, auth } from './firebase';
+import { Radiographer, PatientRecord, Department } from '../types';
+
+export const subscribeToRadiographers = (onUpdate: (rads: Radiographer[]) => void) => {
+  if (!auth.currentUser) return () => {};
+  
+  const q = query(collection(db, 'radiographers'));
+  return onSnapshot(q, (snapshot) => {
+    const rads: Radiographer[] = [];
+    snapshot.forEach(doc => {
+      rads.push({ id: doc.id, ...doc.data() } as Radiographer);
+    });
+    // @ts-ignore
+    rads.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    onUpdate(rads);
+  }, (error) => {
+    handleFirestoreError(error, OperationType.LIST, 'radiographers');
+  });
+};
+
+import { initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { firebaseConfigData } from './firebase';
+
+export const addRadiographerWithAuth = async (rad: Omit<Radiographer, 'id' | 'createdAt'>, password?: string) => {
+  if (!auth.currentUser) throw new Error('Not authenticated');
+  
+  let tempAuthInstance = null;
+  let tempApp = null;
+  
+  if (password) {
+    try {
+      // Initialize a temporary Firebase app to create the user without logging out the current admin
+      tempApp = initializeApp(firebaseConfigData, 'TempApp-' + Date.now());
+      tempAuthInstance = getAuth(tempApp);
+      
+      const email = rad.username.includes('@') ? rad.username : `${rad.username.toLowerCase().replace(/\s/g, '')}@radiographer.app`;
+      // Create user auth profile
+      await createUserWithEmailAndPassword(tempAuthInstance, email, password);
+    } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        throw new Error('Username already taken by another account.');
+      }
+      throw new Error(`Failed to create user authentication: ${error.message}`);
+    }
+  }
+
+  const radId = Math.random().toString(36).substring(2, 15);
+  try {
+    const finalRad = {
+      ...rad,
+      userId: auth.currentUser.uid,
+      createdAt: serverTimestamp()
+    };
+    await setDoc(doc(db, 'radiographers', radId), finalRad);
+    return radId;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, 'radiographers');
+  }
+};
+
+export const updateRadiographer = async (id: string, updates: Partial<Omit<Radiographer, 'id' | 'createdAt'>>) => {
+  if (!auth.currentUser) throw new Error('Not authenticated');
+  try {
+    await setDoc(doc(db, 'radiographers', id), { ...updates, updatedAt: serverTimestamp() }, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, 'radiographers');
+  }
+};
+
+export const deleteRadiographer = async (id: string) => {
+  if (!auth.currentUser) throw new Error('Not authenticated');
+  try {
+    await deleteDoc(doc(db, 'radiographers', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, 'radiographers');
+  }
+};
+
+export const subscribeToPatientRecords = (onUpdate: (records: PatientRecord[]) => void) => {
+  if (!auth.currentUser) return () => {};
+  
+  const q = query(collection(db, 'patientRecords'));
+  return onSnapshot(q, (snapshot) => {
+    const records: PatientRecord[] = [];
+    snapshot.forEach(doc => {
+      records.push({ id: doc.id, ...doc.data() } as PatientRecord);
+    });
+    // Sort descending by date, then latest created
+    records.sort((a, b) => {
+      if (a.date !== b.date) return b.date.localeCompare(a.date);
+      // @ts-ignore
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+    onUpdate(records);
+  }, (error) => {
+    handleFirestoreError(error, OperationType.LIST, 'patientRecords');
+  });
+};
+
+export const addPatientRecord = async (record: Omit<PatientRecord, 'id'>) => {
+  if (!auth.currentUser) throw new Error('Not authenticated');
+  const recordId = Math.random().toString(36).substring(2, 15);
+  try {
+    const finalRecord = {
+      ...record,
+      userId: auth.currentUser.uid,
+      createdAt: serverTimestamp()
+    };
+    await setDoc(doc(db, 'patientRecords', recordId), finalRecord);
+    return recordId;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, 'patientRecords');
+  }
+};
+
+export const deletePatientRecord = async (recordId: string) => {
+  if (!auth.currentUser) throw new Error('Not authenticated');
+  try {
+    await deleteDoc(doc(db, 'patientRecords', recordId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, 'patientRecords');
+  }
+};
+
+export interface ManualStockEntry {
+  date: string;
+  filmType: string;
+  receive: number;
+  waste: number;
+}
+
+export const subscribeToManualStocks = (onUpdate: (stocks: ManualStockEntry[]) => void) => {
+  if (!auth.currentUser) return () => {};
+  
+  const q = query(collection(db, 'filmStocks'));
+  return onSnapshot(q, (snapshot) => {
+    const stocks: ManualStockEntry[] = [];
+    snapshot.forEach(doc => {
+      stocks.push(doc.data() as ManualStockEntry);
+    });
+    onUpdate(stocks);
+  }, (error) => {
+    handleFirestoreError(error, OperationType.LIST, 'filmStocks');
+  });
+};
+
+export const updateManualStock = async (stock: ManualStockEntry) => {
+  if (!auth.currentUser) throw new Error('Not authenticated');
+  const stockId = `${stock.date}_${stock.filmType}`;
+  try {
+    const finalStock = {
+      ...stock,
+      use: 0, // Keep 'use' at 0 in this doc, calculated dynamically
+      userId: auth.currentUser.uid,
+      updatedAt: serverTimestamp()
+    };
+    await setDoc(doc(db, 'filmStocks', stockId), finalStock);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, 'filmStocks');
+  }
+};
