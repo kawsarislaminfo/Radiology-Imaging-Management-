@@ -12,7 +12,7 @@ service cloud.firestore {
     }
 
     function isAuthorized() {
-      return isSignedIn();
+      return isSignedIn() && (request.auth.token.email_verified == true || isAdmin());
     }
 
     function isValidId(id) {
@@ -40,19 +40,20 @@ service cloud.firestore {
 
     // Patient Records
     function isValidPatientRecord(data) {
-      let required = ['date', 'name', 'userId', 'createdAt', 'age', 'invoice', 'filmType', 'count', 'radiographer', 'department'];
+      let required = ['date', 'name', 'userId', 'createdAt', 'age', 'invoice', 'filmType', 'count', 'radiographer', 'department', 'filmSize'];
       return data.keys().hasAll(required) &&
              data.keys().size() == required.size() &&
-             data.date is string && data.date.size() <= 20 &&
-             data.name is string && data.name.size() <= 100 &&
+             data.date is string && data.date.size() <= 32 &&
+             data.name is string && data.name.size() <= 128 &&
              data.userId == request.auth.uid &&
              data.createdAt == request.time &&
-             data.age is string &&
-             data.invoice is string &&
-             data.filmType is string &&
-             data.count is number &&
-             data.radiographer is string &&
-             data.department is string;
+             data.age is string && data.age.size() <= 20 &&
+             data.invoice is string && data.invoice.size() <= 64 &&
+             data.filmType is string && data.filmType.size() <= 64 &&
+             data.count is number && data.count >= 0 && data.count <= 100 &&
+             data.radiographer is string && data.radiographer.size() <= 128 &&
+             data.department is string && data.department.size() <= 64 &&
+             data.filmSize is string && data.filmSize.size() <= 32;
     }
 
     match /patientRecords/{recordId} {
@@ -92,8 +93,8 @@ service cloud.firestore {
       // Create schema (no updatedAt yet)
       let required = ['name', 'username', 'role', 'isActive', 'userId', 'createdAt'];
       return data.keys().hasAll(required) &&
-             data.name is string && data.name.size() <= 100 &&
-             data.username is string &&
+             data.name is string && data.name.size() <= 128 &&
+             data.username is string && data.username.size() <= 128 &&
              data.role in ['admin', 'radiographer'] &&
              data.isActive is bool &&
              data.userId == request.auth.uid &&
@@ -102,8 +103,8 @@ service cloud.firestore {
 
     function isValidRadiographerUpdate(data) {
        // Update schema (includes updatedAt)
-       return data.name is string &&
-              data.username is string &&
+       return data.name is string && data.name.size() <= 128 &&
+              data.username is string && data.username.size() <= 128 &&
               data.role in ['admin', 'radiographer'] &&
               data.isActive is bool &&
               data.updatedAt == request.time;

@@ -15,7 +15,7 @@ export const subscribeToSystemSettings = (onUpdate: (settings: SystemSettings) =
       footerDisclaimer: 'Confidential medical information. For authorized personnel only.',
       bottomNav: [
         { id: 'DASHBOARD', label: 'Home', iconName: 'LayoutDashboard', isEnabled: true },
-        { id: 'X-RAY 14x17', label: 'X-Ray', iconName: 'Bone', isEnabled: true },
+        { id: 'DIGITAL X-RAY', label: 'X-Ray', iconName: 'Bone', isEnabled: true },
         { id: 'OPG', label: 'OPG', iconName: 'Activity', isEnabled: true },
         { id: 'CT-SCAN', label: 'CT', iconName: 'Scan', isEnabled: true },
         { id: 'DATA MANAGEMENT', label: 'Data', iconName: 'Database', isEnabled: true },

@@ -49,7 +49,7 @@ function calculateStartingBalance(targetMonthPrefix: string, filmType: string, r
   const targetDate = `${targetMonthPrefix}-01`;
   
   const prevStocks = manualStocks.filter(s => s.date < targetDate && s.filmType === filmType);
-  const prevRecords = records.filter(r => r.date < targetDate && r.filmType === filmType);
+  const prevRecords = records.filter(r => r.date < targetDate && (r.filmSize === filmType || (r.filmType === filmType && !r.filmSize)));
 
   const totalReceived = prevStocks.reduce((sum, s) => sum + (s.receive || 0), 0);
   const totalWasted = prevStocks.reduce((sum, s) => sum + (s.waste || 0), 0);
@@ -67,7 +67,7 @@ function generateFilmStock(daysInMonth: number, monthPrefix: string, startBf: nu
     
     // Calculate Use
     const use = records
-      .filter(r => r.filmType === filmType && r.date === date)
+      .filter(r => (r.filmSize === filmType || (r.filmType === filmType && !r.filmSize)) && r.date === date)
       .reduce((sum, r) => sum + r.count, 0);
       
     // Manual receive/waste
@@ -191,13 +191,12 @@ const LoginForm = ({ systemSettings }: { systemSettings: SystemSettings }) => {
 
 const DEPARTMENTS: { id: Department; label: string; icon: React.ElementType; isSub?: boolean }[] = [
   { id: 'DASHBOARD', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'X-RAY 14x17', label: 'X-RAY 14x17', icon: Bone },
-  { id: 'X-RAY 11x14', label: 'X-RAY 11x14', icon: Bone },
+  { id: 'DIGITAL X-RAY', label: 'DIGITAL X-RAY', icon: Bone },
   { id: 'OPG', label: 'OPG', icon: Activity },
   { id: 'CT-SCAN', label: 'CT-SCAN', icon: Scan },
   { id: 'FILM SUMMARY', label: 'Film Summary', icon: FileBox },
-  { id: 'FILM SUMMARY 14x17', label: '14x17 Film', icon: FileBox, isSub: true },
-  { id: 'FILM SUMMARY 11x14', label: '11x14 Film', icon: FileBox, isSub: true },
+  { id: 'FILM SUMMARY 14x17', label: '14x17 Film Summary', icon: FileBox, isSub: true },
+  { id: 'FILM SUMMARY 11x14', label: '11x14 Film Summary', icon: FileBox, isSub: true },
   { id: 'DATA MANAGEMENT', label: 'Data Management', icon: Database },
   { id: 'RADIOGRAPHERS', label: 'Radiographers', icon: Users },
   { id: 'SYSTEM SETTINGS', label: 'System Settings', icon: Settings },
@@ -229,7 +228,7 @@ export default function App() {
     address: 'Dhaka, Bangladesh',
     bottomNav: [
       { id: 'DASHBOARD', label: 'Home', iconName: 'LayoutDashboard', isEnabled: true },
-      { id: 'X-RAY 14x17', label: 'X-Ray', iconName: 'Bone', isEnabled: true },
+      { id: 'DIGITAL X-RAY', label: 'X-Ray', iconName: 'Bone', isEnabled: true },
       { id: 'OPG', label: 'OPG', iconName: 'Activity', isEnabled: true },
       { id: 'CT-SCAN', label: 'CT', iconName: 'Scan', isEnabled: true },
       { id: 'DATA MANAGEMENT', label: 'Data', iconName: 'Database', isEnabled: true },
@@ -550,12 +549,15 @@ export default function App() {
           <div className="max-w-[1600px] mx-auto h-full flex flex-col scale-[0.98] sm:scale-100 origin-top">
             <AnimatePresence mode="wait">
               {activeTab === 'DASHBOARD' && <div key="dashboard"><MasterDashboard currentDate={currentDate} records={records} /></div>}
-              {['X-RAY 14x17', 'X-RAY 11x14', 'OPG', 'CT-SCAN'].includes(activeTab) && (
+              {['DIGITAL X-RAY', 'X-RAY 14x17', 'X-RAY 11x14', 'OPG', 'CT-SCAN'].includes(activeTab) && (
                 <div key={activeTab}>
                   <DepartmentEntry
                     department={activeTab as Department}
                     currentDate={currentDate}
-                    records={records.filter(r => r.department === activeTab)}
+                    records={records.filter(r => 
+                      r.department === activeTab || 
+                      (activeTab === 'DIGITAL X-RAY' && (r.department === 'X-RAY 14x17' || r.department === 'X-RAY 11x14'))
+                    )}
                     radiographers={radiographers}
                     onAddRecord={handleAddRecord}
                   />
@@ -678,7 +680,7 @@ function BottomNav({ activeTab, setActiveTab, bottomNav, navStyle = 'FLOATING' }
     ? bottomNav.filter(n => n.isEnabled)
     : [
         { id: 'DASHBOARD', label: 'Home', iconName: 'LayoutDashboard', isEnabled: true },
-        { id: 'X-RAY 14x17', label: 'X-Ray', iconName: 'Bone', isEnabled: true },
+        { id: 'DIGITAL X-RAY', label: 'X-Ray', iconName: 'Bone', isEnabled: true },
         { id: 'OPG', label: 'OPG', iconName: 'Activity', isEnabled: true },
         { id: 'CT-SCAN', label: 'CT', iconName: 'Scan', isEnabled: true },
         { id: 'DATA MANAGEMENT', label: 'Data', iconName: 'Database', isEnabled: true },
@@ -1345,12 +1347,12 @@ function WelcomeModal({ isOpen, onClose, hospitalName, title, message, style = '
 
 function MasterDashboard({ currentDate, records }: { currentDate: string, records: PatientRecord[] }) {
   const getCount = (dept: string) => records.filter(r => r.department === dept).length;
-  const totalFilm14x17 = records.filter(r => r.filmType === '14x17').reduce((sum, r) => sum + r.count, 0);
-  const totalFilm11x14 = records.filter(r => r.filmType === '11x14').reduce((sum, r) => sum + r.count, 0);
+  const totalFilm14x17 = records.filter(r => r.filmSize === '14x17' || (r.department === 'X-RAY 14x17' && !r.filmSize)).reduce((sum, r) => sum + r.count, 0);
+  const totalFilm11x14 = records.filter(r => r.filmSize === '11x14' || (r.department === 'X-RAY 11x14' && !r.filmSize)).reduce((sum, r) => sum + r.count, 0);
 
   const stats = [
     { label: 'Total CT-Scan', value: getCount('CT-SCAN'), icon: Scan, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/10' },
-    { label: 'Total X-Ray', value: getCount('X-RAY 14x17') + getCount('X-RAY 11x14'), icon: Bone, color: 'text-indigo-500', bg: 'bg-indigo-500/10', border: 'border-indigo-500/10' },
+    { label: 'Total X-Ray', value: getCount('X-RAY 14x17') + getCount('X-RAY 11x14') + getCount('DIGITAL X-RAY'), icon: Bone, color: 'text-indigo-500', bg: 'bg-indigo-500/10', border: 'border-indigo-500/10' },
     { label: 'OPG X-Ray', value: getCount('OPG'), icon: Activity, color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/10' },
     { label: 'Film 14x17', value: totalFilm14x17, icon: FileBox, color: 'text-pink-500', bg: 'bg-pink-500/10', border: 'border-pink-500/10' },
     { label: 'Film 11x14', value: totalFilm11x14, icon: FileBox, color: 'text-cyan-500', bg: 'bg-cyan-500/10', border: 'border-cyan-500/10' },
@@ -1372,7 +1374,7 @@ function MasterDashboard({ currentDate, records }: { currentDate: string, record
   }, [records]);
 
   const pieData = [
-    { name: 'X-Ray', value: getCount('X-RAY 14x17') + getCount('X-RAY 11x14'), color: '#6366f1' },
+    { name: 'X-Ray', value: getCount('X-RAY 14x17') + getCount('X-RAY 11x14') + getCount('DIGITAL X-RAY'), color: '#6366f1' },
     { name: 'CT-Scan', value: getCount('CT-SCAN'), color: '#3b82f6' },
     { name: 'OPG', value: getCount('OPG'), color: '#a855f7' },
   ].filter(d => d.value > 0);
@@ -1494,7 +1496,7 @@ function MasterDashboard({ currentDate, records }: { currentDate: string, record
               <tr className="divide-x divide-slate-100">
                 <th className="px-4 lg:px-6 py-3 lg:py-4 font-bold">DATE</th>
                 <th className="px-4 lg:px-6 py-3 lg:py-4 font-bold text-center">CT-SCAN</th>
-                <th className="px-4 lg:px-6 py-3 lg:py-4 font-bold text-center">X-RAY</th>
+                <th className="px-4 lg:px-6 py-3 lg:py-4 font-bold text-center">DIGITAL X-RAY</th>
                 <th className="px-4 lg:px-6 py-3 lg:py-4 font-bold text-center">OPG</th>
                 <th className="px-4 lg:px-6 py-3 lg:py-4 font-bold text-center">14X17</th>
                 <th className="px-4 lg:px-6 py-3 lg:py-4 font-bold text-center">11X14</th>
@@ -1505,7 +1507,7 @@ function MasterDashboard({ currentDate, records }: { currentDate: string, record
               <tr className="hover:bg-blue-50/20 transition-colors divide-x divide-slate-50">
                 <td className="px-4 lg:px-6 py-3 lg:py-4 font-bold text-slate-400">{currentDate}</td>
                 <td className="px-4 lg:px-6 py-3 lg:py-4 text-center font-black text-slate-700">{getCount('CT-SCAN')}</td>
-                <td className="px-4 lg:px-6 py-3 lg:py-4 text-center font-black text-slate-700">{getCount('X-RAY 14x17') + getCount('X-RAY 11x14')}</td>
+                <td className="px-4 lg:px-6 py-3 lg:py-4 text-center font-black text-slate-700">{getCount('DIGITAL X-RAY') + getCount('X-RAY 14x17') + getCount('X-RAY 11x14')}</td>
                 <td className="px-4 lg:px-6 py-3 lg:py-4 text-center font-black text-slate-700">{getCount('OPG')}</td>
                 <td className="px-4 lg:px-6 py-3 lg:py-4 text-center"><span className="bg-purple-50 text-purple-700 border border-purple-200 py-1 px-3 rounded font-black text-[10px] tracking-tighter">{totalFilm14x17}</span></td>
                 <td className="px-4 lg:px-6 py-3 lg:py-4 text-center"><span className="bg-cyan-50 text-cyan-700 border border-cyan-200 py-1 px-3 rounded font-black text-[10px] tracking-tighter">{totalFilm11x14}</span></td>
@@ -1520,11 +1522,20 @@ function MasterDashboard({ currentDate, records }: { currentDate: string, record
 }
 
 function DepartmentEntry({ department, currentDate, records, radiographers, onAddRecord }: { department: Department, currentDate: string, records: PatientRecord[], radiographers: Radiographer[], onAddRecord: (r: Omit<PatientRecord, 'id'>) => void }) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    age: string;
+    invoice: string;
+    filmType: string;
+    filmSize: PatientRecord['filmSize'];
+    count: number;
+    radiographer: string;
+  }>({
     name: '',
     age: '',
     invoice: '',
-    filmType: department.includes('14x17') ? '14x17' : department.includes('11x14') ? '11x14' : '14x17',
+    filmType: department === 'DIGITAL X-RAY' ? 'Chest' : department,
+    filmSize: department.includes('14x17') ? '14x17' : department.includes('11x14') ? '11x14' : '14x17',
     count: 1,
     radiographer: radiographers.length > 0 ? radiographers[0].name : 'Technician'
   });
@@ -1552,6 +1563,7 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
         age: formData.age,
         invoice: formData.invoice,
         filmType: formData.filmType,
+        filmSize: formData.filmSize,
         count: Number(formData.count),
         radiographer: formData.radiographer,
         department
@@ -1584,7 +1596,7 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
           </h3>
         </div>
         <form onSubmit={handleSubmit} className="p-4 sm:p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
              <div className="md:col-span-2 grid grid-cols-2 gap-3">
                <div className="col-span-2 space-y-1">
                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Patient Identity</label>
@@ -1600,18 +1612,30 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
                </div>
              </div>
 
-             <div className="grid grid-cols-2 gap-3">
+             <div className="md:col-span-2 grid grid-cols-2 gap-3">
                <div className="space-y-1">
-                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Size</label>
-                 <select value={formData.filmType} onChange={e => setFormData({...formData, filmType: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all appearance-none">
-                   <option value="14x17">14x17</option>
-                   <option value="11x14">11x14</option>
-                   <option value="8x10">8x10</option>
+                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">{department === 'DIGITAL X-RAY' ? 'Film Size' : 'Option'}</label>
+                 <select value={department === 'DIGITAL X-RAY' ? formData.filmSize : formData.filmType} onChange={e => setFormData({...formData, [department === 'DIGITAL X-RAY' ? 'filmSize' : 'filmType']: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all appearance-none">
+                    {department === 'DIGITAL X-RAY' ? (
+                      <>
+                        <option value="14x17">14x17</option>
+                        <option value="11x14">11x14</option>
+                        <option value="10x12">10x12</option>
+                        <option value="8x10">8x10</option>
+                        <option value="12x15">12x15</option>
+                      </>
+                    ) : (
+                      <option value={department}>{department}</option>
+                    )}
                  </select>
                </div>
                <div className="space-y-1">
-                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Qty</label>
-                 <input type="number" min="1" value={formData.count} onChange={e => setFormData({...formData, count: Number(e.target.value)})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-black text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all" />
+                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">{department === 'DIGITAL X-RAY' ? 'X-Ray Type' : 'Qty'}</label>
+                 {department === 'DIGITAL X-RAY' ? (
+                   <input type="text" value={formData.filmType} onChange={e => setFormData({...formData, filmType: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all" placeholder="Ex: Chest" />
+                 ) : (
+                   <input type="number" min="1" value={formData.count} onChange={e => setFormData({...formData, count: Number(e.target.value)})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-black text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all" />
+                 )}
                </div>
                <div className="col-span-2 space-y-1">
                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Radiographer</label>
@@ -1623,7 +1647,13 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
                </div>
              </div>
 
-             <div className="flex items-end">
+             <div className="flex flex-col gap-3 justify-end">
+               {department === 'DIGITAL X-RAY' && (
+                 <div className="space-y-1">
+                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Qty</label>
+                   <input type="number" min="1" value={formData.count} onChange={e => setFormData({...formData, count: Number(e.target.value)})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-black text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all" />
+                 </div>
+               )}
                <button type="submit" className="w-full bg-slate-900 text-white font-black py-2.5 rounded-lg active:scale-95 transition-all shadow-md text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2">
                  <PlusCircle className="w-3.5 h-3.5" /> Push Record
                </button>
@@ -1639,17 +1669,20 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
             <User className="w-3.5 h-3.5 text-blue-500" />
             Registry Trace
           </h4>
-          <span className="text-[8px] sm:text-[10px] font-black bg-white border border-slate-200 text-slate-400 px-2 py-0.5 rounded tracking-widest">{records.length} TOTAL</span>
+          <div className="flex items-center gap-2">
+             <span className="text-[8px] sm:text-[10px] font-black bg-white border border-slate-200 text-slate-400 px-2 py-0.5 rounded tracking-widest">{records.length} TOTAL</span>
+          </div>
         </div>
         <div className="overflow-x-auto flex-1 custom-scrollbar">
-          <table className="w-full text-left text-xs whitespace-nowrap min-w-[700px]">
+          <table className="w-full text-left text-xs whitespace-nowrap min-w-[800px]">
             <thead className="bg-white text-slate-400 border-b border-gray-100 text-[9px] font-black tracking-widest uppercase">
               <tr className="divide-x divide-slate-50">
                 <th className="px-4 py-3">DATE</th>
                 <th className="px-4 py-3">PATIENT NAME</th>
                 <th className="px-4 py-3 text-center">AGE</th>
                 <th className="px-4 py-3 text-center">INVOICE</th>
-                <th className="px-4 py-3 text-center">FILM</th>
+                <th className="px-4 py-3 text-center">{department === 'DIGITAL X-RAY' ? 'STUDY' : 'DEPT'}</th>
+                <th className="px-4 py-3 text-center">FILM SIZE</th>
                 <th className="px-4 py-3 text-center">QTY</th>
                 <th className="px-4 py-3">TECH</th>
               </tr>
@@ -1657,12 +1690,12 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
             <tbody className="divide-y divide-slate-50">
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-slate-300">
+                  <td colSpan={8} className="px-4 py-12 text-center text-slate-300">
                     <User className="w-8 h-8 mx-auto mb-2 opacity-10" />
                     <p className="font-black uppercase tracking-widest text-[9px]">No data available</p>
                   </td>
                 </tr>
-              ) : records.map((record) => (
+              ) : [...records].sort((a, b) => b.date.localeCompare(a.date)).map((record) => (
                 <tr key={record.id} className="hover:bg-blue-50/30 transition-colors divide-x divide-slate-50/50 group">
                   <td className="px-4 py-2 font-bold text-slate-400 text-[10px] tabular-nums">{record.date}</td>
                   <td className="px-4 py-2 font-black text-slate-800 text-xs uppercase">{record.name}</td>
@@ -1671,8 +1704,13 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
                     <span className="font-mono text-[9px] font-black bg-slate-50 text-slate-400 px-1.5 py-0.5 rounded border border-slate-200/50 tabular-nums uppercase">{record.invoice}</span>
                   </td>
                   <td className="px-4 py-2 text-center">
-                    <span className={`text-[9px] font-black px-2 py-0.5 rounded border tracking-widest uppercase ${record.filmType === '14x17' ? 'bg-purple-50 text-purple-600 border-purple-200/50' : record.filmType === '11x14' ? 'bg-cyan-50 text-cyan-600 border-cyan-200/50' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>
+                    <span className="text-[9px] font-black text-slate-600 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-tighter italic">
                       {record.filmType}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    <span className={`text-[9px] font-black px-2 py-0.5 rounded border tracking-widest uppercase ${record.filmSize === '14x17' ? 'bg-purple-50 text-purple-600 border-purple-200/50' : record.filmSize === '11x14' ? 'bg-cyan-50 text-cyan-600 border-cyan-200/50' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                      {record.filmSize || record.filmType}
                     </span>
                   </td>
                   <td className="px-4 py-2 text-center">
@@ -1906,7 +1944,8 @@ function DataManagementDashboard({ records, onDeleteRecord }: { records: Patient
               <th className="px-4 py-3 font-black">PATIENT NAME</th>
               <th className="px-4 py-3 font-black text-center">AGE</th>
               <th className="px-4 py-3 font-black text-center">INVOICE</th>
-              <th className="px-4 py-3 font-black text-center">FILM</th>
+              <th className="px-4 py-3 font-black text-center">STUDY</th>
+              <th className="px-4 py-3 font-black text-center">SIZE</th>
               <th className="px-4 py-3 font-black text-center">QTY</th>
               <th className="px-4 py-3 font-black">TECH</th>
               <th className="px-4 py-3 text-right">OP</th>
@@ -1915,7 +1954,7 @@ function DataManagementDashboard({ records, onDeleteRecord }: { records: Patient
           <tbody className="divide-y divide-slate-100 bg-white">
             {filteredRecords.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-slate-300">
+                <td colSpan={10} className="px-4 py-12 text-center text-slate-300">
                   <Database className="w-8 h-8 mx-auto mb-2 opacity-10" />
                   <p className="text-[10px] font-bold uppercase tracking-widest">No matching records</p>
                 </td>
@@ -1934,8 +1973,13 @@ function DataManagementDashboard({ records, onDeleteRecord }: { records: Patient
                   <span className="font-mono text-[10px] font-black text-slate-400 bg-slate-50 border border-slate-200/50 px-2 py-0.5 rounded tabular-nums tracking-tighter">{record.invoice}</span>
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <span className={`text-[9px] font-black px-2 py-0.5 rounded border inline-block tracking-tighter uppercase ${record.filmType === '14x17' ? 'bg-purple-50 text-purple-600 border-purple-200/50' : record.filmType === '11x14' ? 'bg-cyan-50 text-cyan-600 border-cyan-200/50' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                  <span className="text-[9px] font-black text-slate-500 italic uppercase tracking-tighter">
                     {record.filmType}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <span className={`text-[9px] font-black px-2 py-0.5 rounded border inline-block tracking-tighter uppercase ${record.filmSize === '14x17' ? 'bg-purple-50 text-purple-600 border-purple-200/50' : record.filmSize === '11x14' ? 'bg-cyan-50 text-cyan-600 border-cyan-200/50' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                    {record.filmSize || record.filmType}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-center">

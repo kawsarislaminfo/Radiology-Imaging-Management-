@@ -1,4 +1,4 @@
-export type Department = 'DASHBOARD' | 'X-RAY 14x17' | 'X-RAY 11x14' | 'OPG' | 'CT-SCAN' | 'FILM SUMMARY' | 'FILM SUMMARY 14x17' | 'FILM SUMMARY 11x14' | 'DATA MANAGEMENT' | 'RADIOGRAPHERS' | 'SYSTEM SETTINGS' | 'SYSTEM SETTINGS GENERAL' | 'SYSTEM SETTINGS HOSPITAL' | 'SYSTEM SETTINGS LOGIN' | 'SYSTEM SETTINGS BOTTOMNAV';
+export type Department = 'DASHBOARD' | 'DIGITAL X-RAY' | 'OPG' | 'CT-SCAN' | 'FILM SUMMARY' | 'FILM SUMMARY 14x17' | 'FILM SUMMARY 11x14' | 'DATA MANAGEMENT' | 'RADIOGRAPHERS' | 'SYSTEM SETTINGS' | 'SYSTEM SETTINGS GENERAL' | 'SYSTEM SETTINGS HOSPITAL' | 'SYSTEM SETTINGS LOGIN' | 'SYSTEM SETTINGS BOTTOMNAV' | 'X-RAY 14x17' | 'X-RAY 11x14';
 
 export interface PatientRecord {
   id: string;
@@ -7,6 +7,7 @@ export interface PatientRecord {
   age: string;
   invoice: string;
   filmType: string;
+  filmSize?: '14x17' | '11x14' | '10x12' | '8x10' | '12x15' | 'Other';
   count: number;
   radiographer: string;
   department: Department;
