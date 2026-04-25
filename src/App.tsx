@@ -307,7 +307,14 @@ export default function App() {
   }, [systemSettings.faviconUrl]);
 
   const handleAddRecord = async (record: Omit<PatientRecord, 'id'>) => {
-    await addPatientRecord(record);
+    try {
+      await addPatientRecord(record);
+    } catch (error: any) {
+      console.error('Error adding record:', error);
+      const errorMessage = error.message.includes('{') ? JSON.parse(error.message).error : error.message;
+      alert(`Error saving record: ${errorMessage}`);
+      throw error;
+    }
   };
 
   const handleDeleteRecord = async (id: string) => {
@@ -666,22 +673,51 @@ const ICON_GROUPS = [
 ];
 
 function BottomNav({ activeTab, setActiveTab, bottomNav, navStyle = 'FLOATING' }: { activeTab: Department, setActiveTab: (t: Department) => void, bottomNav?: BottomNavItem[], navStyle?: NavStyle }) {
-  if (!bottomNav || bottomNav.filter(n => n.isEnabled).length === 0) return null;
+  // Use default items if none provided or all disabled
+  const displayItems = (bottomNav && bottomNav.filter(n => n.isEnabled).length > 0) 
+    ? bottomNav.filter(n => n.isEnabled)
+    : [
+        { id: 'DASHBOARD', label: 'Home', iconName: 'LayoutDashboard', isEnabled: true },
+        { id: 'X-RAY 14x17', label: 'X-Ray', iconName: 'Bone', isEnabled: true },
+        { id: 'OPG', label: 'OPG', iconName: 'Activity', isEnabled: true },
+        { id: 'CT-SCAN', label: 'CT', iconName: 'Scan', isEnabled: true },
+        { id: 'DATA MANAGEMENT', label: 'Data', iconName: 'Database', isEnabled: true },
+      ].filter(n => n.isEnabled) as BottomNavItem[];
 
-  const enabledItems = bottomNav.filter(n => n.isEnabled);
+  const safeNavStyle = (['FLOATING', 'DOCKED', 'MINIMAL', 'GLASS', 'NEON_PINK', 'NEON_CYAN', 'BRUTALIST', 'SKEUOMORPHIC', 'AURORA', 'MESH_DARK', 'PILL_ACTIVE', 'TRANSPARENT', 'TAB_INDICATOR', 'ULTRA_SLIM'].includes(navStyle) ? navStyle : 'FLOATING') as NavStyle;
 
-  const containerStyles = {
+  const containerStyles: Record<NavStyle, string> = {
     FLOATING: "bottom-4 left-1/2 -translate-x-1/2 px-4 w-full max-w-[90%]",
     DOCKED: "bottom-0 left-0 w-full",
     MINIMAL: "bottom-2 left-1/2 -translate-x-1/2 w-fit px-4",
     GLASS: "bottom-4 left-1/2 -translate-x-1/2 px-4 w-[95%]",
+    NEON_PINK: "bottom-4 left-1/2 -translate-x-1/2 px-4 w-[90%]",
+    NEON_CYAN: "bottom-4 left-1/2 -translate-x-1/2 px-4 w-[90%]",
+    BRUTALIST: "bottom-4 left-1/2 -translate-x-1/2 px-4 w-[90%]",
+    SKEUOMORPHIC: "bottom-4 left-1/2 -translate-x-1/2 px-4 w-[90%]",
+    AURORA: "bottom-4 left-1/2 -translate-x-1/2 px-4 w-[92%]",
+    MESH_DARK: "bottom-4 left-1/2 -translate-x-1/2 px-4 w-[90%]",
+    PILL_ACTIVE: "bottom-6 left-1/2 -translate-x-1/2 px-4 w-auto",
+    TRANSPARENT: "bottom-4 left-0 w-full px-6",
+    TAB_INDICATOR: "bottom-0 left-0 w-full",
+    ULTRA_SLIM: "bottom-0 left-0 w-full",
   };
 
-  const innerStyles = {
+  const innerStyles: Record<NavStyle, string> = {
     FLOATING: "bg-slate-900 px-6 py-2.5 rounded-2xl shadow-2xl border border-slate-800",
     DOCKED: "bg-white border-t border-slate-200 px-6 py-1.5 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]",
     MINIMAL: "bg-white/90 backdrop-blur-md border border-slate-200 rounded-full px-5 py-2 shadow-lg",
     GLASS: "bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-3 shadow-2xl",
+    NEON_PINK: "bg-slate-950 px-6 py-3 rounded-xl border border-pink-500/50 shadow-[0_0_20px_rgba(236,72,153,0.3)]",
+    NEON_CYAN: "bg-slate-950 px-6 py-3 rounded-xl border border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.3)]",
+    BRUTALIST: "bg-white px-6 py-3 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]",
+    SKEUOMORPHIC: "bg-slate-100 px-6 py-3 rounded-2xl border border-white shadow-[inset_0_2px_4px_rgba(255,255,255,1),0_8px_16px_rgba(0,0,0,0.1)]",
+    AURORA: "bg-gradient-to-br from-indigo-600/90 via-purple-600/90 to-pink-600/90 backdrop-blur-xl px-6 py-3 rounded-2xl border border-white/20 shadow-2xl",
+    MESH_DARK: "bg-slate-900 px-6 py-3 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden",
+    PILL_ACTIVE: "bg-slate-100/80 backdrop-blur-md px-2 py-2 rounded-full border border-slate-200 shadow-lg flex gap-1",
+    TRANSPARENT: "bg-transparent flex justify-around py-4",
+    TAB_INDICATOR: "bg-white px-8 py-2 border-t border-slate-100 flex justify-around",
+    ULTRA_SLIM: "bg-slate-900/95 backdrop-blur-md px-6 py-1.5 flex justify-around",
   };
 
   const textColors: Record<NavStyle, { active: string, inactive: string }> = {
@@ -689,28 +725,59 @@ function BottomNav({ activeTab, setActiveTab, bottomNav, navStyle = 'FLOATING' }
     DOCKED: { active: 'text-blue-600', inactive: 'text-slate-400' },
     MINIMAL: { active: 'text-slate-900', inactive: 'text-slate-300' },
     GLASS: { active: 'text-white', inactive: 'text-white/30' },
+    NEON_PINK: { active: 'text-pink-400 font-bold drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]', inactive: 'text-slate-600' },
+    NEON_CYAN: { active: 'text-cyan-400 font-bold drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]', inactive: 'text-slate-600' },
+    BRUTALIST: { active: 'text-black scale-110 font-black', inactive: 'text-slate-400 font-bold' },
+    SKEUOMORPHIC: { active: 'text-blue-600 drop-shadow-sm', inactive: 'text-slate-400' },
+    AURORA: { active: 'text-white scale-110', inactive: 'text-indigo-200' },
+    MESH_DARK: { active: 'text-emerald-400', inactive: 'text-slate-500' },
+    PILL_ACTIVE: { active: 'text-white bg-blue-600 px-4 py-2 rounded-full', inactive: 'text-slate-500 px-4 py-2' },
+    TRANSPARENT: { active: 'text-blue-600 drop-shadow-md', inactive: 'text-slate-400' },
+    TAB_INDICATOR: { active: 'text-black', inactive: 'text-slate-300' },
+    ULTRA_SLIM: { active: 'text-white', inactive: 'text-slate-500' },
   };
 
   return (
-    <div className={`lg:hidden fixed z-[90] ${containerStyles[navStyle]}`}>
-      <div className={`flex items-center justify-between ${innerStyles[navStyle]}`}>
-        {enabledItems.map(item => {
+    <div className={`lg:hidden fixed z-[90] ${containerStyles[safeNavStyle]}`}>
+      <div className={`flex items-center justify-between ${innerStyles[safeNavStyle]} ${safeNavStyle === 'MESH_DARK' ? 'after:absolute after:inset-0 after:bg-[radial-gradient(circle_at_50%_0%,rgba(52,211,153,0.1),transparent_70%)]' : ''}`}>
+        {displayItems.map(item => {
           const IconComponent = (LucideIcons as any)[item.iconName] || LayoutDashboard;
           const isActive = activeTab === item.id;
           
+          if (safeNavStyle === 'PILL_ACTIVE') {
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id as Department)}
+                className={`flex items-center gap-2 transition-all duration-300 ${isActive ? textColors.PILL_ACTIVE.active : textColors.PILL_ACTIVE.inactive} cursor-pointer`}
+                type="button"
+              >
+                <IconComponent className="w-5 h-5" />
+                {isActive && <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">{item.label}</span>}
+              </button>
+            );
+          }
+
           return (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id as Department)}
-              className={`flex flex-col items-center gap-0.5 transition-all ${isActive ? `${textColors[navStyle].active} scale-105` : `${textColors[navStyle].inactive}`} cursor-pointer`}
+              className={`flex flex-col items-center gap-0.5 transition-all relative ${isActive ? `${textColors[safeNavStyle].active} scale-105` : `${textColors[safeNavStyle].inactive}`} cursor-pointer`}
               type="button"
             >
-              <IconComponent className={navStyle === 'MINIMAL' ? 'w-5 h-5' : 'w-4 h-4'} />
-              {navStyle !== 'MINIMAL' && (
+              <IconComponent className={(safeNavStyle === 'MINIMAL' || safeNavStyle === 'ULTRA_SLIM') ? 'w-5 h-5' : 'w-4 h-4'} />
+              {(safeNavStyle !== 'MINIMAL' && safeNavStyle !== 'ULTRA_SLIM') && (
                 <span className="text-[9px] font-black uppercase tracking-tighter">{item.label}</span>
               )}
-              {isActive && navStyle !== 'GLASS' && (
-                <motion.div layoutId="mobile-active" className={`w-1 h-1 rounded-full ${navStyle === 'DOCKED' ? 'bg-blue-600' : 'bg-current'}`} />
+              {isActive && (
+                <>
+                  {safeNavStyle === 'TAB_INDICATOR' && (
+                    <motion.div layoutId="mobile-indicator" className="fixed top-0 left-0 right-0 h-0.5 bg-black" />
+                  )}
+                  {(!['GLASS', 'PILL_ACTIVE', 'TRANSPARENT', 'TAB_INDICATOR', 'BRUTALIST'].includes(safeNavStyle)) && (
+                    <motion.div layoutId="mobile-active" className={`w-1 h-1 rounded-full ${safeNavStyle === 'DOCKED' ? 'bg-blue-600' : 'bg-current'}`} />
+                  )}
+                </>
               )}
             </button>
           );
@@ -803,14 +870,14 @@ function BottomNavSettingsDashboard({ systemSettings }: { systemSettings: System
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Navigation Style</h4>
              </div>
              
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {(['FLOATING', 'DOCKED', 'MINIMAL', 'GLASS'] as NavStyle[]).map(style => (
+             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                {(['FLOATING', 'DOCKED', 'MINIMAL', 'GLASS', 'NEON_PINK', 'NEON_CYAN', 'BRUTALIST', 'SKEUOMORPHIC', 'AURORA', 'MESH_DARK', 'PILL_ACTIVE', 'TRANSPARENT', 'TAB_INDICATOR', 'ULTRA_SLIM'] as NavStyle[]).map(style => (
                   <button
                     key={style}
                     onClick={() => setFormData({ ...formData, navStyle: style })}
                     className={`p-4 rounded-xl border-2 transition-all text-center ${formData.navStyle === style ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-md' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'}`}
                   >
-                    <p className="text-xs font-bold uppercase tracking-widest">{style}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest leading-tight">{style.replace('_', ' ')}</p>
                   </button>
                 ))}
              </div>
@@ -1468,20 +1535,37 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
     }
   }, [radiographers]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name) return;
-    onAddRecord({
-      date: currentDate,
-      name: formData.name,
-      age: formData.age,
-      invoice: formData.invoice,
-      filmType: formData.filmType,
-      count: Number(formData.count),
-      radiographer: formData.radiographer,
-      department
-    });
-    setFormData({ ...formData, name: '', age: '', invoice: '' });
+    if (!formData.name || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+    
+    try {
+      await onAddRecord({
+        date: currentDate,
+        name: formData.name,
+        age: formData.age,
+        invoice: formData.invoice,
+        filmType: formData.filmType,
+        count: Number(formData.count),
+        radiographer: formData.radiographer,
+        department
+      });
+      setSubmitStatus('success');
+      setFormData({ ...formData, name: '', age: '', invoice: '' });
+      setTimeout(() => setSubmitStatus('idle'), 3000);
+    } catch (err) {
+      console.error(err);
+      setSubmitStatus('error');
+      alert('Failed to save record. Please check your connection or permissions.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -1578,7 +1662,7 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
                     <p className="font-black uppercase tracking-widest text-[9px]">No data available</p>
                   </td>
                 </tr>
-              ) : [...records].reverse().map((record) => (
+              ) : records.map((record) => (
                 <tr key={record.id} className="hover:bg-blue-50/30 transition-colors divide-x divide-slate-50/50 group">
                   <td className="px-4 py-2 font-bold text-slate-400 text-[10px] tabular-nums">{record.date}</td>
                   <td className="px-4 py-2 font-black text-slate-800 text-xs uppercase">{record.name}</td>

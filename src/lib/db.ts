@@ -1,20 +1,38 @@
-import { collection, doc, query, where, getDocs, setDoc, onSnapshot, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { collection, doc, query, where, getDocs, setDoc, onSnapshot, serverTimestamp, deleteDoc, addDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, auth } from './firebase';
 import { Radiographer, PatientRecord, Department, SystemSettings } from '../types';
+import { initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { firebaseConfigData } from './firebase';
 
 export const subscribeToSystemSettings = (onUpdate: (settings: SystemSettings) => void) => {
   const docRef = doc(db, 'settings', 'general');
   return onSnapshot(docRef, (docSnap) => {
+    const defaultSettings: SystemSettings = {
+      browserTitle: 'Sajeda Jabber Hospital Dashboard',
+      hospitalName: 'SAJEDA JABBER HOSPITAL LTD',
+      footerCopyright: `© ${new Date().getFullYear()} Sajeda Jabber Hospital Ltd. All rights reserved.`,
+      footerDisclaimer: 'Confidential medical information. For authorized personnel only.',
+      bottomNav: [
+        { id: 'DASHBOARD', label: 'Home', iconName: 'LayoutDashboard', isEnabled: true },
+        { id: 'X-RAY 14x17', label: 'X-Ray', iconName: 'Bone', isEnabled: true },
+        { id: 'OPG', label: 'OPG', iconName: 'Activity', isEnabled: true },
+        { id: 'CT-SCAN', label: 'CT', iconName: 'Scan', isEnabled: true },
+        { id: 'DATA MANAGEMENT', label: 'Data', iconName: 'Database', isEnabled: true },
+      ],
+      navStyle: 'FLOATING'
+    };
+
     if (docSnap.exists()) {
-      onUpdate(docSnap.data() as SystemSettings);
-    } else {
-      // Default settings if none exist
+      const data = docSnap.data() as SystemSettings;
       onUpdate({
-        browserTitle: 'Sajeda Jabber Hospital Dashboard',
-        hospitalName: 'SAJEDA JABBER HOSPITAL LTD',
-        footerCopyright: '© 2026 Sajeda Jabber Hospital Ltd. All rights reserved.',
-        footerDisclaimer: 'Confidential medical information. For authorized personnel only.'
+        ...defaultSettings,
+        ...data,
+        // Deep merge bottomNav if it exists but might be empty? 
+        // Actually simple merge is probably enough for most fields.
       });
+    } else {
+      onUpdate(defaultSettings);
     }
   }, (error) => {
     handleFirestoreError(error, OperationType.GET, 'settings/general');
@@ -47,10 +65,6 @@ export const subscribeToRadiographers = (onUpdate: (rads: Radiographer[]) => voi
   });
 };
 
-import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { firebaseConfigData } from './firebase';
-
 export const addRadiographerWithAuth = async (rad: Omit<Radiographer, 'id' | 'createdAt'>, password?: string) => {
   if (!auth.currentUser) throw new Error('Not authenticated');
   
@@ -74,15 +88,14 @@ export const addRadiographerWithAuth = async (rad: Omit<Radiographer, 'id' | 'cr
     }
   }
 
-  const radId = Math.random().toString(36).substring(2, 15);
   try {
     const finalRad = {
       ...rad,
       userId: auth.currentUser.uid,
       createdAt: serverTimestamp()
     };
-    await setDoc(doc(db, 'radiographers', radId), finalRad);
-    return radId;
+    const docRef = await addDoc(collection(db, 'radiographers'), finalRad);
+    return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, 'radiographers');
   }
@@ -118,8 +131,10 @@ export const subscribeToPatientRecords = (onUpdate: (records: PatientRecord[]) =
     // Sort descending by date, then latest created
     records.sort((a, b) => {
       if (a.date !== b.date) return b.date.localeCompare(a.date);
-      // @ts-ignore
-      return (b.createdAt || 0) - (a.createdAt || 0);
+      
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt || 0);
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt || 0);
+      return (timeB || Date.now()) - (timeA || Date.now());
     });
     onUpdate(records);
   }, (error) => {
@@ -129,15 +144,14 @@ export const subscribeToPatientRecords = (onUpdate: (records: PatientRecord[]) =
 
 export const addPatientRecord = async (record: Omit<PatientRecord, 'id'>) => {
   if (!auth.currentUser) throw new Error('Not authenticated');
-  const recordId = Math.random().toString(36).substring(2, 15);
   try {
     const finalRecord = {
       ...record,
       userId: auth.currentUser.uid,
       createdAt: serverTimestamp()
     };
-    await setDoc(doc(db, 'patientRecords', recordId), finalRecord);
-    return recordId;
+    const docRef = await addDoc(collection(db, 'patientRecords'), finalRecord);
+    return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, 'patientRecords');
   }

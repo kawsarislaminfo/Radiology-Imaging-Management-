@@ -10,6 +10,7 @@ export interface PatientRecord {
   count: number;
   radiographer: string;
   department: Department;
+  createdAt?: any;
 }
 
 export interface FilmStockDaily {
@@ -29,10 +30,10 @@ export interface Radiographer {
   specialization: string;
   role: 'admin' | 'radiographer';
   isActive: boolean;
-  createdAt: number;
+  createdAt?: any;
 }
 
-export type NavStyle = 'FLOATING' | 'DOCKED' | 'MINIMAL' | 'GLASS';
+export type NavStyle = 'FLOATING' | 'DOCKED' | 'MINIMAL' | 'GLASS' | 'NEON_PINK' | 'NEON_CYAN' | 'BRUTALIST' | 'SKEUOMORPHIC' | 'AURORA' | 'MESH_DARK' | 'PILL_ACTIVE' | 'TRANSPARENT' | 'TAB_INDICATOR' | 'ULTRA_SLIM';
 
 export interface BottomNavItem {
   id: Department;

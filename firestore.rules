@@ -12,7 +12,7 @@ service cloud.firestore {
     }
 
     function isAuthorized() {
-      return isSignedIn() && (request.auth.token.email_verified == true || isAdmin());
+      return isSignedIn();
     }
 
     function isValidId(id) {
@@ -23,7 +23,8 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'ebsoftopd@gmail.com' ||
-        request.auth.token.email == 'navil@radiographer.app'
+        request.auth.token.email == 'navil@radiographer.app' ||
+        request.auth.token.email == 'kawsar@radiographer.app'
       );
     }
 
