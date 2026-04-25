@@ -32,6 +32,7 @@
         "adminLogoUrl": { "type": "string" },
         "contactPhone": { "type": "string" },
         "address": { "type": "string" },
+        "navStyle": { "type": "string", "enum": ["FLOATING", "DOCKED", "MINIMAL", "GLASS"] },
         "bottomNav": {
           "type": "array",
           "items": {

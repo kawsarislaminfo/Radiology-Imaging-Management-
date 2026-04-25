@@ -32,6 +32,8 @@ export interface Radiographer {
   createdAt: number;
 }
 
+export type NavStyle = 'FLOATING' | 'DOCKED' | 'MINIMAL' | 'GLASS';
+
 export interface BottomNavItem {
   id: Department;
   label: string;
@@ -51,4 +53,10 @@ export interface SystemSettings {
   contactPhone?: string;
   address?: string;
   bottomNav?: BottomNavItem[];
+  navStyle?: NavStyle;
+  welcomeTitle?: string;
+  welcomeMessage?: string;
+  showWelcomePopup?: boolean;
+  welcomeStyle?: 'CLASSIC' | 'POSTER' | 'GLASS' | 'BENTO';
+  welcomeImageUrl?: string;
 }

@@ -11,8 +11,8 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isVerified() {
-      return isSignedIn() && request.auth.token.email_verified == true;
+    function isAuthorized() {
+      return isSignedIn() && (request.auth.token.email_verified == true || isAdmin());
     }
 
     function isValidId(id) {
@@ -56,9 +56,9 @@ service cloud.firestore {
 
     match /patientRecords/{recordId} {
       allow read: if isSignedIn();
-      allow create: if isVerified() && isValidId(recordId) && isValidPatientRecord(incoming());
+      allow create: if isAuthorized() && isValidId(recordId) && isValidPatientRecord(incoming());
       allow update: if false; // Not allowed via UI
-      allow delete: if isAdmin() || (isVerified() && existing().userId == request.auth.uid);
+      allow delete: if isAdmin() || (isAuthorized() && existing().userId == request.auth.uid);
     }
 
     // Film Stocks
@@ -77,7 +77,7 @@ service cloud.firestore {
 
     match /filmStocks/{stockId} {
       allow read: if isSignedIn();
-      allow create, update: if isVerified() && isValidId(stockId) && isValidFilmStock(incoming());
+      allow create, update: if isAuthorized() && isValidId(stockId) && isValidFilmStock(incoming());
       allow delete: if isAdmin();
     }
 

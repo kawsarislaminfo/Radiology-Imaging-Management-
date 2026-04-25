@@ -6,20 +6,36 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
+:root {
+  /* 20% zoom out effect by reducing base font size */
+  font-size: 14px;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    font-size: 13px; /* Slightly smaller for desktop to get that tight pro look */
+  }
+}
+
+body {
+  @apply bg-gray-50 text-slate-800;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(15, 23, 42, 0.1);
     border-radius: 20px;
   }
   .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(15, 23, 42, 0.2);
   }
 }
 
