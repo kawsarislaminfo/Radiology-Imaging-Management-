@@ -31,6 +31,11 @@ import {
   Printer,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  Layers,
+  FileText,
+  Hash,
+  CreditCard,
   AlertTriangle,
   Building2,
   MenuSquare,
@@ -50,7 +55,7 @@ import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { Department, PatientRecord, FilmStockDaily, SystemSettings, BottomNavItem, NavStyle } from './types';
 import { auth, signIn, signOut } from './lib/firebase';
-import { subscribeToPatientRecords, addPatientRecord, subscribeToManualStocks, ManualStockEntry, updateManualStock, deletePatientRecord, subscribeToRadiographers, subscribeToSystemSettings, updateSystemSettings } from './lib/db';
+import { subscribeToPatientRecords, addPatientRecord, subscribeToManualStocks, ManualStockEntry, updateManualStock, deletePatientRecord, subscribeToRadiographers, subscribeToSystemSettings, updateSystemSettings, updatePatientRecord } from './lib/db';
 import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 
 function calculateStartingBalance(targetMonthPrefix: string, filmType: string, records: PatientRecord[], manualStocks: ManualStockEntry[]): number {
@@ -147,7 +152,7 @@ const LoginForm = ({ systemSettings }: { systemSettings: SystemSettings }) => {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "circOut" }}
-        className="bg-white/10 backdrop-blur-2xl p-8 sm:p-12 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center relative z-10 border border-white/10"
+        className="bg-white/10 backdrop-blur-2xl p-8 sm:p-12 rounded-sm shadow-2xl max-w-md w-full text-center relative z-10 border border-white/10"
       >
         <div className="mb-8 flex justify-center">
           {systemSettings.loginLogoUrl ? (
@@ -156,7 +161,7 @@ const LoginForm = ({ systemSettings }: { systemSettings: SystemSettings }) => {
               <img src={systemSettings.loginLogoUrl} alt="Logo" className="h-24 w-auto object-contain relative z-10" referrerPolicy="no-referrer" />
             </div>
           ) : (
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-600/40 rotate-6 hover:rotate-0 transition-transform duration-500">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-sm flex items-center justify-center shadow-2xl shadow-blue-600/40 rotate-6 hover:rotate-0 transition-transform duration-500">
               <Activity className="w-10 h-10 text-white" />
             </div>
           )}
@@ -177,7 +182,7 @@ const LoginForm = ({ systemSettings }: { systemSettings: SystemSettings }) => {
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mb-8 p-4 bg-red-500/20 border border-red-500/30 text-red-100 text-xs rounded-2xl font-bold flex items-center gap-3 backdrop-blur-md"
+            className="mb-8 p-4 bg-red-500/20 border border-red-500/30 text-red-100 text-xs rounded-sm font-bold flex items-center gap-3 backdrop-blur-md"
           >
             <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
             <span className="text-left">{error}</span>
@@ -193,7 +198,7 @@ const LoginForm = ({ systemSettings }: { systemSettings: SystemSettings }) => {
                  type="text" 
                  value={username}
                  onChange={e => setUsername(e.target.value)}
-                 className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl focus:bg-white/10 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-white placeholder:text-white/20"
+                 className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-sm focus:bg-white/10 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-white placeholder:text-white/20"
                  placeholder="Enter ID or Email"
                />
              </div>
@@ -206,7 +211,7 @@ const LoginForm = ({ systemSettings }: { systemSettings: SystemSettings }) => {
                  type="password" 
                  value={password}
                  onChange={e => setPassword(e.target.value)}
-                 className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl focus:bg-white/10 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-white placeholder:text-white/20"
+                 className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-sm focus:bg-white/10 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-white placeholder:text-white/20"
                  placeholder="••••••••"
                />
              </div>
@@ -214,7 +219,7 @@ const LoginForm = ({ systemSettings }: { systemSettings: SystemSettings }) => {
            <button 
              type="submit"
              disabled={isLoading}
-             className="relative group w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 px-4 rounded-2xl transition-all flex items-center justify-center gap-3 overflow-hidden shadow-xl shadow-blue-900/40 disabled:opacity-70 active:scale-[0.98] mt-2 uppercase tracking-widest text-sm"
+             className="relative group w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 px-4 rounded-sm transition-all flex items-center justify-center gap-3 overflow-hidden shadow-xl shadow-blue-900/40 disabled:opacity-70 active:scale-[0.98] mt-2 uppercase tracking-widest text-sm"
            >
              {isLoading ? (
                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -235,7 +240,7 @@ const LoginForm = ({ systemSettings }: { systemSettings: SystemSettings }) => {
         <button 
           onClick={signIn}
           type="button"
-          className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-4 px-4 rounded-2xl transition-all flex items-center justify-center gap-3 active:scale-[0.98] uppercase tracking-widest text-[11px]"
+          className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-4 px-4 rounded-sm transition-all flex items-center justify-center gap-3 active:scale-[0.98] uppercase tracking-widest text-[11px]"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" /><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg>
           Admin Login
@@ -375,6 +380,15 @@ export default function App() {
   const handleDeleteRecord = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this patient record? This action cannot be undone.')) {
       await deletePatientRecord(id);
+    }
+  };
+
+  const handleEditRecord = async (id: string, updates: Partial<PatientRecord>) => {
+    try {
+      await updatePatientRecord(id, updates);
+    } catch (error: any) {
+      console.error('Error updating record:', error);
+      alert('Failed to update record.');
     }
   };
 
@@ -553,7 +567,7 @@ export default function App() {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 top-14 bg-white border border-slate-200 rounded-2xl shadow-2xl w-64 p-2 z-50 overflow-hidden"
+                    className="absolute right-0 top-14 bg-white border border-slate-200 rounded-sm shadow-2xl w-64 p-2 z-50 overflow-hidden"
                   >
                     <div className="px-4 py-3 border-b border-slate-100 mb-1 bg-slate-50/50 rounded-t-xl">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Signed in as</p>
@@ -563,7 +577,7 @@ export default function App() {
                     <div className="space-y-1">
                       <button 
                         onClick={() => { setActiveTab('RADIOGRAPHERS'); setIsProfileMenuOpen(false); }} 
-                        className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition rounded-xl flex items-center gap-3 decoration-0 outline-none"
+                        className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition rounded-sm flex items-center gap-3 decoration-0 outline-none"
                       >
                         <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
                           <UserCircle className="w-4 h-4 text-blue-500" />
@@ -573,7 +587,7 @@ export default function App() {
                       
                       <button 
                         onClick={() => { setIsPasswordModalOpen(true); setIsProfileMenuOpen(false); }} 
-                        className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition rounded-xl flex items-center gap-3 decoration-0 outline-none"
+                        className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition rounded-sm flex items-center gap-3 decoration-0 outline-none"
                       >
                         <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
                           <Lock className="w-4 h-4 text-amber-500" />
@@ -585,7 +599,7 @@ export default function App() {
                     <div className="h-px bg-slate-100 my-1 mx-2" />
                     
                     <button 
-                      className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 transition rounded-xl flex items-center gap-3 decoration-0 outline-none" 
+                      className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 transition rounded-sm flex items-center gap-3 decoration-0 outline-none" 
                       onClick={signOut}
                     >
                       <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center">
@@ -601,7 +615,7 @@ export default function App() {
         </header>
 
         {/* Dynamic Content Area */}
-        <div className="flex-1 overflow-auto bg-slate-50/10 p-1.5 sm:p-4 lg:p-6 z-10 custom-scrollbar pb-24 sm:pb-4">
+        <div className="flex-1 overflow-auto bg-slate-50/10 px-1.5 pt-0 pb-24 sm:px-4 sm:pb-4 lg:px-6 z-10 custom-scrollbar">
           <div className="max-w-[1600px] mx-auto h-full flex flex-col scale-[0.98] sm:scale-100 origin-top">
             <AnimatePresence mode="wait">
               {activeTab === 'DASHBOARD' && <div key="dashboard"><MasterDashboard currentDate={currentDate} records={records} /></div>}
@@ -616,6 +630,7 @@ export default function App() {
                     )}
                     radiographers={radiographers}
                     onAddRecord={handleAddRecord}
+                    onEditRecord={handleEditRecord}
                   />
                 </div>
               )}
@@ -636,7 +651,7 @@ export default function App() {
                   initial={{ opacity: 0, y: 15 }} 
                   animate={{ opacity: 1, y: 0 }} 
                   exit={{ opacity: 0, y: -15 }}
-                  className="flex h-full items-center justify-center bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100"
+                  className="flex h-full items-center justify-center bg-white rounded-sm shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100"
                 >
                   <div className="text-center text-slate-400">
                     <FileBox className="w-16 h-16 mx-auto mb-4 text-blue-500 opacity-20" />
@@ -656,7 +671,7 @@ export default function App() {
                   initial={{ opacity: 0, y: 15 }} 
                   animate={{ opacity: 1, y: 0 }} 
                   exit={{ opacity: 0, y: -15 }}
-                  className="flex h-full items-center justify-center bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100"
+                  className="flex h-full items-center justify-center bg-white rounded-sm shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100"
                 >
                   <div className="text-center text-slate-400">
                     <Settings className="w-16 h-16 mx-auto mb-4 text-blue-500 opacity-20" />
@@ -762,16 +777,16 @@ function BottomNav({ activeTab, setActiveTab, bottomNav, navStyle = 'FLOATING' }
   };
 
   const innerStyles: Record<NavStyle, string> = {
-    FLOATING: "bg-slate-900 px-6 py-2.5 rounded-2xl shadow-2xl border border-slate-800",
+    FLOATING: "bg-slate-900 px-6 py-2.5 rounded-sm shadow-2xl border border-slate-800",
     DOCKED: "bg-white border-t border-slate-200 px-6 py-1.5 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]",
     MINIMAL: "bg-white/90 backdrop-blur-md border border-slate-200 rounded-full px-5 py-2 shadow-lg",
-    GLASS: "bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-3 shadow-2xl",
-    NEON_PINK: "bg-slate-950 px-6 py-3 rounded-xl border border-pink-500/50 shadow-[0_0_20px_rgba(236,72,153,0.3)]",
-    NEON_CYAN: "bg-slate-950 px-6 py-3 rounded-xl border border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.3)]",
+    GLASS: "bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-sm px-6 py-3 shadow-2xl",
+    NEON_PINK: "bg-slate-950 px-6 py-3 rounded-sm border border-pink-500/50 shadow-[0_0_20px_rgba(236,72,153,0.3)]",
+    NEON_CYAN: "bg-slate-950 px-6 py-3 rounded-sm border border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.3)]",
     BRUTALIST: "bg-white px-6 py-3 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]",
-    SKEUOMORPHIC: "bg-slate-100 px-6 py-3 rounded-2xl border border-white shadow-[inset_0_2px_4px_rgba(255,255,255,1),0_8px_16px_rgba(0,0,0,0.1)]",
-    AURORA: "bg-gradient-to-br from-indigo-600/90 via-purple-600/90 to-pink-600/90 backdrop-blur-xl px-6 py-3 rounded-2xl border border-white/20 shadow-2xl",
-    MESH_DARK: "bg-slate-900 px-6 py-3 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden",
+    SKEUOMORPHIC: "bg-slate-100 px-6 py-3 rounded-sm border border-white shadow-[inset_0_2px_4px_rgba(255,255,255,1),0_8px_16px_rgba(0,0,0,0.1)]",
+    AURORA: "bg-gradient-to-br from-indigo-600/90 via-purple-600/90 to-pink-600/90 backdrop-blur-xl px-6 py-3 rounded-sm border border-white/20 shadow-2xl",
+    MESH_DARK: "bg-slate-900 px-6 py-3 rounded-sm border border-white/10 shadow-2xl relative overflow-hidden",
     PILL_ACTIVE: "bg-slate-100/80 backdrop-blur-md px-2 py-2 rounded-full border border-slate-200 shadow-lg flex gap-1",
     TRANSPARENT: "bg-transparent flex justify-around py-4",
     TAB_INDICATOR: "bg-white px-8 py-2 border-t border-slate-100 flex justify-around",
@@ -897,10 +912,10 @@ function BottomNavSettingsDashboard({ systemSettings }: { systemSettings: System
       exit={{ opacity: 0, y: -15 }}
       className="max-w-4xl mx-auto space-y-8 pb-12"
     >
-      <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-sm shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
         <div className="bg-slate-900 px-8 py-6 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
+            <div className="p-3 bg-amber-500/10 rounded-sm border border-amber-500/20">
               <Menu className="w-6 h-6 text-amber-400" />
             </div>
             <div>
@@ -911,18 +926,18 @@ function BottomNavSettingsDashboard({ systemSettings }: { systemSettings: System
           <button 
             onClick={handleSave}
             disabled={isSaving}
-            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-6 py-2.5 rounded-xl font-bold text-sm tracking-wider transition-all shadow-lg shadow-blue-600/20"
+            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-6 py-2.5 rounded-sm font-bold text-sm tracking-wider transition-all shadow-lg shadow-blue-600/20"
           >
             {isSaving ? 'SAVING...' : 'SAVE CONFIG'}
           </button>
         </div>
 
         <div className="p-8 space-y-8">
-          {saveMessage && <div className="p-4 bg-emerald-50 text-emerald-600 text-sm font-bold rounded-xl border border-emerald-100 flex items-center gap-2">
+          {saveMessage && <div className="p-4 bg-emerald-50 text-emerald-600 text-sm font-bold rounded-sm border border-emerald-100 flex items-center gap-2">
             <Shield className="w-4 h-4" /> {saveMessage}
           </div>}
 
-          <div className="space-y-4">
+          <div className="space-y-2">
              <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
                 <span className="w-1.5 h-4 bg-amber-500 rounded-full" />
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Navigation Style</h4>
@@ -933,7 +948,7 @@ function BottomNavSettingsDashboard({ systemSettings }: { systemSettings: System
                   <button
                     key={style}
                     onClick={() => setFormData({ ...formData, navStyle: style })}
-                    className={`p-4 rounded-xl border-2 transition-all text-center ${formData.navStyle === style ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-md' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'}`}
+                    className={`p-4 rounded-sm border-2 transition-all text-center ${formData.navStyle === style ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-md' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'}`}
                   >
                     <p className="text-[10px] font-bold uppercase tracking-widest leading-tight">{style.replace('_', ' ')}</p>
                   </button>
@@ -941,14 +956,14 @@ function BottomNavSettingsDashboard({ systemSettings }: { systemSettings: System
              </div>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-2">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
                 <span className="w-1.5 h-4 bg-blue-500 rounded-full" />
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Menu Items & Order</h4>
             </div>
 
             {formData.bottomNav?.map((item, idx) => (
-              <div key={idx} className={`p-4 rounded-2xl border transition-all relative ${item.isEnabled ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-50 opacity-50 border-transparent'}`}>
+              <div key={idx} className={`p-4 rounded-sm border transition-all relative ${item.isEnabled ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-50 opacity-50 border-transparent'}`}>
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                   <div className="md:col-span-1 flex flex-col items-center gap-1">
                     <button onClick={() => moveUp(idx)} disabled={idx === 0} className="p-1 hover:bg-slate-100 rounded text-slate-400 disabled:opacity-30"><ChevronLeft className="w-4 h-4 rotate-90" /></button>
@@ -991,7 +1006,7 @@ function BottomNavSettingsDashboard({ systemSettings }: { systemSettings: System
                     </div>
 
                     {showIconPicker === idx && (
-                      <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 max-h-80 overflow-y-auto">
+                      <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-white border border-slate-200 rounded-sm shadow-2xl p-4 max-h-80 overflow-y-auto">
                         <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-2">
                           <h5 className="text-xs font-black text-slate-800 uppercase tracking-widest">Icon Groups</h5>
                           <button onClick={() => setShowIconPicker(null)} className="text-slate-400 hover:text-slate-800"><X className="w-4 h-4" /></button>
@@ -1052,7 +1067,7 @@ function BottomNavSettingsDashboard({ systemSettings }: { systemSettings: System
                 const newItem: BottomNavItem = { id: 'DASHBOARD', label: 'New Item', iconName: 'Home', isEnabled: true };
                 setFormData({ ...formData, bottomNav: [...(formData.bottomNav || []), newItem] });
               }}
-              className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-xs uppercase tracking-widest hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-2"
+              className="w-full py-4 border-2 border-dashed border-slate-200 rounded-sm text-slate-400 font-bold text-xs uppercase tracking-widest hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" /> Add Item
             </button>
@@ -1125,7 +1140,7 @@ function ChangePasswordModal({ isOpen, onClose }: { isOpen: boolean, onClose: ()
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden"
+        className="relative bg-white rounded-sm shadow-2xl w-full max-w-sm overflow-hidden"
       >
         <div className="bg-slate-900 px-6 py-4 flex items-center justify-between border-b border-slate-800">
            <h3 className="text-white font-bold tracking-wider flex items-center gap-2">
@@ -1138,8 +1153,8 @@ function ChangePasswordModal({ isOpen, onClose }: { isOpen: boolean, onClose: ()
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs font-bold rounded-xl">{error}</div>}
-          {success && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs font-bold rounded-xl">Password updated successfully!</div>}
+          {error && <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs font-bold rounded-sm">{error}</div>}
+          {success && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs font-bold rounded-sm">Password updated successfully!</div>}
           
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block pl-1">New Password</label>
@@ -1150,7 +1165,7 @@ function ChangePasswordModal({ isOpen, onClose }: { isOpen: boolean, onClose: ()
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
                 required
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 outline-none font-bold text-slate-800"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-sm focus:ring-2 focus:ring-blue-500/50 outline-none font-bold text-slate-800"
                 placeholder="••••••••"
               />
             </div>
@@ -1165,7 +1180,7 @@ function ChangePasswordModal({ isOpen, onClose }: { isOpen: boolean, onClose: ()
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
                 required
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 outline-none font-bold text-slate-800"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-sm focus:ring-2 focus:ring-blue-500/50 outline-none font-bold text-slate-800"
                 placeholder="••••••••"
               />
             </div>
@@ -1174,7 +1189,7 @@ function ChangePasswordModal({ isOpen, onClose }: { isOpen: boolean, onClose: ()
           <button 
             type="submit"
             disabled={isLoading || success}
-            className="w-full bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition shadow-lg flex items-center justify-center gap-2 mt-2"
+            className="w-full bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-4 rounded-sm transition shadow-lg flex items-center justify-center gap-2 mt-2"
           >
             {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
             Update Password
@@ -1196,7 +1211,7 @@ function WelcomeModal({ isOpen, onClose, hospitalName, title, message, style = '
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="relative bg-slate-950 w-full max-w-2xl aspect-[3/4] md:aspect-video rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-8 sm:p-16 border border-white/10"
+            className="relative bg-slate-950 w-full max-w-2xl aspect-[3/4] md:aspect-video rounded-sm overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-8 sm:p-16 border border-white/10"
           >
             <div className="absolute inset-0">
                {imageUrl ? (
@@ -1219,7 +1234,7 @@ function WelcomeModal({ isOpen, onClose, hospitalName, title, message, style = '
               >
                 <Activity className="w-10 h-10 text-blue-400" />
               </motion.div>
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter uppercase leading-none">{title || 'SYSTEM ACCESS'}</h2>
                 <div className="h-1 w-24 bg-blue-500 mx-auto rounded-full" />
                 <p className="text-blue-200/60 font-bold uppercase tracking-[0.3em] text-[10px]">{hospitalName}</p>
@@ -1246,13 +1261,13 @@ function WelcomeModal({ isOpen, onClose, hospitalName, title, message, style = '
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 50, opacity: 0 }}
-            className="relative w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl overflow-hidden flex flex-col items-center text-center space-y-8"
+            className="relative w-full max-w-lg rounded-sm p-10 shadow-2xl overflow-hidden flex flex-col items-center text-center space-y-8"
           >
             <div className="absolute inset-0 z-0">
               {imageUrl && <img src={imageUrl} alt="" className="w-full h-full object-cover opacity-20" />}
               <div className="absolute inset-0 bg-white/10 backdrop-blur-3xl border border-white/20" />
             </div>
-            <div className="relative z-10 w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-3xl rotate-12 flex items-center justify-center shadow-2xl">
+            <div className="relative z-10 w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-sm rotate-12 flex items-center justify-center shadow-2xl">
                <Shield className="w-12 h-12 text-white -rotate-12" />
             </div>
             <div className="space-y-3">
@@ -1264,7 +1279,7 @@ function WelcomeModal({ isOpen, onClose, hospitalName, title, message, style = '
             </p>
             <button 
               onClick={onClose}
-              className="w-full bg-indigo-500 hover:bg-indigo-400 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-indigo-500/30 active:scale-[0.98] text-[10px] uppercase tracking-[0.2em]"
+              className="w-full bg-indigo-500 hover:bg-indigo-400 text-white font-black py-5 rounded-sm transition-all shadow-xl shadow-indigo-500/30 active:scale-[0.98] text-[10px] uppercase tracking-[0.2em]"
             >
               Access Granted
             </button>
@@ -1278,7 +1293,7 @@ function WelcomeModal({ isOpen, onClose, hospitalName, title, message, style = '
             exit={{ scale: 0.8, opacity: 0 }}
             className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-4"
           >
-            <div className="md:col-span-2 bg-white rounded-3xl p-8 flex flex-col justify-between shadow-xl relative overflow-hidden">
+            <div className="md:col-span-2 bg-white rounded-sm p-8 flex flex-col justify-between shadow-xl relative overflow-hidden">
                {imageUrl && (
                  <div className="absolute top-0 right-0 w-1/3 h-full opacity-10 pointer-events-none">
                    <img src={imageUrl} alt="" className="w-full h-full object-cover" />
@@ -1286,7 +1301,7 @@ function WelcomeModal({ isOpen, onClose, hospitalName, title, message, style = '
                )}
                <div className="space-y-6 relative z-10">
                  <div className="flex items-center gap-3">
-                   <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
+                   <div className="w-10 h-10 bg-slate-900 rounded-sm flex items-center justify-center">
                      <LayoutDashboard className="w-5 h-5 text-blue-400" />
                    </div>
                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">{hospitalName}</h3>
@@ -1297,14 +1312,14 @@ function WelcomeModal({ isOpen, onClose, hospitalName, title, message, style = '
                <button onClick={onClose} className="mt-8 self-start bg-slate-900 text-white px-8 py-3 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-colors">Start Session</button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
-               <div className="bg-blue-600 rounded-3xl p-6 text-white flex flex-col justify-between shadow-xl">
+               <div className="bg-blue-600 rounded-sm p-6 text-white flex flex-col justify-between shadow-xl">
                  <Activity className="w-8 h-8 opacity-40" />
                  <div>
                    <div className="text-2xl font-black tabular-nums">SYNC</div>
                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-60">Status: Active</div>
                  </div>
                </div>
-               <div className="bg-slate-900 rounded-3xl p-6 text-white flex flex-col justify-between shadow-xl relative overflow-hidden">
+               <div className="bg-slate-900 rounded-sm p-6 text-white flex flex-col justify-between shadow-xl relative overflow-hidden">
                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/20 rounded-full blur-2xl" />
                  <Shield className="w-8 h-8 text-blue-400" />
                  <div className="text-[10px] font-black uppercase tracking-widest">AES-256 SECURED</div>
@@ -1318,7 +1333,7 @@ function WelcomeModal({ isOpen, onClose, hospitalName, title, message, style = '
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative bg-white w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[400px]"
+            className="relative bg-white w-full max-w-4xl rounded-sm overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[400px]"
           >
             <div className="w-full md:w-1/2 bg-slate-900 relative p-8 flex flex-col justify-center overflow-hidden">
                {imageUrl ? (
@@ -1333,7 +1348,7 @@ function WelcomeModal({ isOpen, onClose, hospitalName, title, message, style = '
                  </>
                )}
                <div className="relative z-10 space-y-6">
-                 <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 backdrop-blur-md">
+                 <div className="w-16 h-16 bg-white/10 rounded-sm flex items-center justify-center border border-white/20 backdrop-blur-md">
                    <Activity className="w-8 h-8 text-blue-400" />
                  </div>
                  <div className="space-y-2">
@@ -1367,7 +1382,7 @@ function WelcomeModal({ isOpen, onClose, hospitalName, title, message, style = '
                  <div className="flex flex-col gap-3 pt-4">
                    <button 
                      onClick={onClose}
-                     className="bg-slate-900 text-white font-black py-4 px-8 rounded-xl shadow-xl shadow-blue-900/20 active:scale-95 transition-all text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2"
+                     className="bg-slate-900 text-white font-black py-4 px-8 rounded-sm shadow-xl shadow-blue-900/20 active:scale-95 transition-all text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2"
                    >
                      Initialize Dashboard <ChevronRight className="w-4 h-4" />
                    </button>
@@ -1440,11 +1455,11 @@ function MasterDashboard({ currentDate, records }: { currentDate: string, record
       initial={{ opacity: 0, y: 15 }} 
       animate={{ opacity: 1, y: 0 }} 
       exit={{ opacity: 0, y: -15 }}
-      className="space-y-4 sm:space-y-6 flex flex-col h-full"
+      className="space-y-2 sm:space-y-4 flex flex-col h-full"
     >
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 lg:gap-5">
         {stats.map((stat, idx) => (
-          <div key={idx} className={`bg-white rounded-xl p-3 lg:p-6 shadow-[0_2px_15px_rgba(0,0,0,0.02)] border ${stat.border} flex flex-col hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group`}>
+          <div key={idx} className={`bg-white rounded-sm p-3 lg:p-6 shadow-[0_2px_15px_rgba(0,0,0,0.02)] border ${stat.border} flex flex-col hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group`}>
             <div className={`absolute -right-4 -top-4 w-16 lg:w-20 h-16 lg:h-20 ${stat.bg} rounded-full blur-xl group-hover:scale-150 transition-transform duration-500 opacity-40`} />
             <div className="flex items-center justify-between mb-2 lg:mb-4 relative z-10">
               <div className={`p-1.5 lg:p-3 rounded-lg ${stat.bg} ${stat.color} shadow-sm`}>
@@ -1460,7 +1475,7 @@ function MasterDashboard({ currentDate, records }: { currentDate: string, record
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col min-h-[300px]">
+        <div className="lg:col-span-2 bg-white p-6 rounded-sm shadow-sm border border-slate-100 flex flex-col min-h-[300px]">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
               <Activity className="w-4 h-4 text-blue-500" />
@@ -1490,7 +1505,7 @@ function MasterDashboard({ currentDate, records }: { currentDate: string, record
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+        <div className="bg-white p-6 rounded-sm shadow-sm border border-slate-100 flex flex-col">
           <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-6">
             <PieChart className="w-4 h-4 text-emerald-500" />
             Case Distribution
@@ -1535,7 +1550,7 @@ function MasterDashboard({ currentDate, records }: { currentDate: string, record
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden flex-1 flex flex-col">
+      <div className="bg-white rounded-sm shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden flex-1 flex flex-col">
         <div className="px-4 lg:px-8 py-3 lg:py-4 border-b border-gray-100 bg-slate-50/50 flex justify-between items-center shrink-0">
           <h3 className="font-bold text-slate-800 text-[10px] lg:text-sm tracking-widest uppercase flex items-center gap-2">
             <FileBox className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-blue-500" />
@@ -1577,7 +1592,181 @@ function MasterDashboard({ currentDate, records }: { currentDate: string, record
   );
 }
 
-function DepartmentEntry({ department, currentDate, records, radiographers, onAddRecord }: { department: Department, currentDate: string, records: PatientRecord[], radiographers: Radiographer[], onAddRecord: (r: Omit<PatientRecord, 'id'>) => void }) {
+function EditRecordModal({ 
+  isOpen, 
+  onClose, 
+  record, 
+  radiographers, 
+  onSave 
+}: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  record: PatientRecord | null, 
+  radiographers: Radiographer[], 
+  onSave: (id: string, updates: Partial<PatientRecord>) => Promise<void> 
+}) {
+  const [formData, setFormData] = useState({
+    name: '',
+    age: '',
+    invoice: '',
+    filmType: '',
+    filmSize: '',
+    count: 1,
+    radiographer: ''
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (record) {
+      setFormData({
+        name: record.name || '',
+        age: record.age || '',
+        invoice: record.invoice || '',
+        filmType: record.filmType || '',
+        filmSize: record.filmSize || '',
+        count: record.count || 1,
+        radiographer: record.radiographer || ''
+      });
+    }
+  }, [record, isOpen]);
+
+  if (!isOpen || !record) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      await onSave(record.id, {
+        ...formData,
+        count: Number(formData.count)
+      });
+      onClose();
+    } catch (error) {
+      console.error(error);
+      alert('Failed to save changes.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-white rounded-sm shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200"
+      >
+        <div className="bg-slate-900 px-6 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <Settings className="w-5 h-5 text-blue-400" />
+            </div>
+            <h3 className="text-white font-black uppercase tracking-widest text-sm">Edit Record</h3>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+            <X className="w-5 h-5 text-slate-400" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1 col-span-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Patient Name</label>
+              <input 
+                type="text" 
+                value={formData.name} 
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 outline-none font-bold text-slate-800 text-xs transition-all"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Age</label>
+              <input 
+                type="text" 
+                value={formData.age} 
+                onChange={e => setFormData({ ...formData, age: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 outline-none font-bold text-slate-800 text-xs transition-all"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Invoice</label>
+              <input 
+                type="text" 
+                value={formData.invoice} 
+                onChange={e => setFormData({ ...formData, invoice: e.target.value.toUpperCase() })}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 outline-none font-bold text-slate-800 text-xs transition-all uppercase"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Study / Type</label>
+              <input 
+                type="text" 
+                value={formData.filmType} 
+                onChange={e => setFormData({ ...formData, filmType: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 outline-none font-bold text-slate-800 text-xs transition-all"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Quantity</label>
+              <input 
+                type="number" 
+                min="1"
+                value={formData.count} 
+                onChange={e => setFormData({ ...formData, count: parseInt(e.target.value) || 1 })}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 outline-none font-bold text-slate-800 text-xs transition-all"
+              />
+            </div>
+            <div className="space-y-1 col-span-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Radiographer</label>
+              <select 
+                value={formData.radiographer} 
+                onChange={e => setFormData({ ...formData, radiographer: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 outline-none font-bold text-slate-800 text-xs transition-all appearance-none"
+              >
+                {radiographers.map(r => (
+                  <option key={r.id} value={r.name}>{r.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button 
+              type="button" 
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-slate-200 text-slate-500 font-bold rounded-lg hover:bg-slate-50 transition-all uppercase tracking-widest text-[10px]"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              disabled={isSaving}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-md shadow-blue-600/20 active:scale-95 transition-all uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isSaving ? <Activity className="w-3.5 h-3.5 animate-spin" /> : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
+function DepartmentEntry({ 
+  department, 
+  currentDate, 
+  records, 
+  radiographers, 
+  onAddRecord, 
+  onEditRecord 
+}: { 
+  department: Department, 
+  currentDate: string, 
+  records: PatientRecord[], 
+  radiographers: Radiographer[], 
+  onAddRecord: (r: Omit<PatientRecord, 'id'>) => void, 
+  onEditRecord: (id: string, updates: Partial<PatientRecord>) => Promise<void> 
+}) {
   const [formData, setFormData] = useState<{
     name: string;
     age: string;
@@ -1596,6 +1785,23 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
     radiographer: radiographers.length > 0 ? radiographers[0].name : 'Technician'
   });
 
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+
+  const handleEditClick = (record: PatientRecord) => {
+    setEditingRecordId(record.id);
+    setFormData({
+      name: record.name,
+      age: record.age,
+      invoice: record.invoice,
+      filmType: record.filmType,
+      filmSize: record.filmSize || '14x17',
+      count: record.count,
+      radiographer: record.radiographer,
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+
   useEffect(() => {
     if (radiographers.length > 0 && formData.radiographer === 'Technician') {
       setFormData(f => ({ ...f, radiographer: radiographers[0].name }));
@@ -1613,19 +1819,33 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
     setSubmitStatus('idle');
     
     try {
-      await onAddRecord({
-        date: currentDate,
-        name: formData.name,
-        age: formData.age,
-        invoice: formData.invoice,
-        filmType: formData.filmType,
-        filmSize: formData.filmSize,
-        count: Number(formData.count),
-        radiographer: formData.radiographer,
-        department
-      });
+      if (editingRecordId) {
+        await onEditRecord(editingRecordId, {
+          name: formData.name,
+          age: formData.age,
+          invoice: formData.invoice,
+          filmType: formData.filmType,
+          filmSize: formData.filmSize,
+          count: Number(formData.count),
+          radiographer: formData.radiographer,
+          department
+        });
+        setEditingRecordId(null);
+      } else {
+        await onAddRecord({
+          date: currentDate,
+          name: formData.name,
+          age: formData.age,
+          invoice: formData.invoice,
+          filmType: formData.filmType,
+          filmSize: formData.filmSize,
+          count: Number(formData.count),
+          radiographer: formData.radiographer,
+          department
+        });
+      }
       setSubmitStatus('success');
-      setFormData({ ...formData, name: '', age: '', invoice: '' });
+      setFormData({ ...formData, name: '', age: '', invoice: '', count: 1 });
       setTimeout(() => setSubmitStatus('idle'), 3000);
     } catch (err) {
       console.error(err);
@@ -1641,37 +1861,48 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
       initial={{ opacity: 0, y: 15 }} 
       animate={{ opacity: 1, y: 0 }} 
       exit={{ opacity: 0, y: -15 }}
-      className="space-y-4 flex flex-col h-full"
+      className="space-y-2 sm:space-y-3 flex flex-col h-full"
     >
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden shrink-0">
-        <div className="bg-slate-900 border-b border-slate-800 px-4 sm:px-6 py-2 sm:py-3 flex justify-between items-center relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 rounded-full mix-blend-multiply filter blur-2xl opacity-10 -translate-y-1/2 translate-x-1/2" />
-          <h3 className="font-black text-white text-[9px] sm:text-xs tracking-[0.2em] flex items-center gap-2 relative z-10 shrink-0 uppercase">
-            <span className="w-1.5 h-3 bg-blue-500 rounded-full" />
-            {department} Entry
-          </h3>
-        </div>
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-             <div className="md:col-span-2 grid grid-cols-2 gap-3">
-               <div className="col-span-2 space-y-1">
-                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Patient Identity</label>
-                 <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all" placeholder="Patient Name" />
-               </div>
-               <div className="space-y-1">
-                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Age</label>
-                 <input type="text" value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all" placeholder="Ex: 24y" />
-               </div>
-               <div className="space-y-1">
-                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Invoice</label>
-                 <input type="text" value={formData.invoice} onChange={e => setFormData({...formData, invoice: e.target.value.toUpperCase()})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all uppercase" placeholder="INV-001" required />
-               </div>
+      <div className="bg-white rounded-sm shadow-2xl shadow-slate-200/40 border border-slate-200 overflow-hidden shrink-0">
+        {submitStatus === 'success' && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-emerald-50 border-b border-emerald-100 px-4 py-2 flex items-center justify-center gap-2"
+          >
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Push Complete</span>
+          </motion.div>
+        )}
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5">
+          <div className="flex flex-wrap lg:flex-nowrap items-end gap-3">
+             <div className="flex-[2] min-w-[150px] space-y-1.5 group">
+               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 pl-1 group-focus-within:text-blue-600 transition-colors">
+                 <User className="w-3 h-3" /> Patient Name
+               </label>
+               <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-900 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all placeholder:text-slate-300" placeholder="Full Name" />
              </div>
 
-               <div className="md:col-span-2 grid grid-cols-2 gap-3">
-               <div className="space-y-1">
-                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">{['DIGITAL X-RAY', 'OPG'].includes(department) ? 'Film Size' : 'Option'}</label>
-                 <select value={['DIGITAL X-RAY', 'OPG'].includes(department) ? formData.filmSize : formData.filmType} onChange={e => setFormData({...formData, [['DIGITAL X-RAY', 'OPG'].includes(department) ? 'filmSize' : 'filmType']: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all appearance-none">
+             <div className="w-16 space-y-1.5 group">
+               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 pl-1 group-focus-within:text-blue-600 transition-colors text-center justify-center">
+                 Age
+               </label>
+               <input type="text" value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-900 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all text-center placeholder:text-slate-300" placeholder="Age" />
+             </div>
+
+             <div className="w-24 space-y-1.5 group">
+               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex justify-between items-center pl-1 group-focus-within:text-blue-600 transition-colors">
+                 <span className="flex items-center gap-1">Invoice</span>
+               </label>
+               <input type="text" value={formData.invoice} onChange={e => setFormData({...formData, invoice: e.target.value.toUpperCase()})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-900 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all uppercase placeholder:text-slate-300" placeholder="INV" required />
+             </div>
+
+             <div className="w-28 space-y-1.5 group">
+               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1 pl-1 group-focus-within:text-blue-600 transition-colors">
+                 Size
+               </label>
+               <div className="relative">
+                 <select value={['DIGITAL X-RAY', 'OPG'].includes(department) ? formData.filmSize : formData.filmType} onChange={e => setFormData({...formData, [['DIGITAL X-RAY', 'OPG'].includes(department) ? 'filmSize' : 'filmType']: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-extrabold text-slate-900 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all appearance-none cursor-pointer">
                     {department === 'OPG' ? (
                       <option value="11x14">11x14</option>
                     ) : department === 'DIGITAL X-RAY' ? (
@@ -1686,95 +1917,145 @@ function DepartmentEntry({ department, currentDate, records, radiographers, onAd
                       <option value={department}>{department}</option>
                     )}
                  </select>
+                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
                </div>
-               <div className="space-y-1">
-                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">{department === 'DIGITAL X-RAY' ? 'X-Ray Type' : ''}</label>
-                 {department === 'DIGITAL X-RAY' ? (
-                   <input type="text" value={formData.filmType} onChange={e => setFormData({...formData, filmType: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all" placeholder="Ex: Chest" />
-                 ) : (
-                   <div className="w-full h-[38px]" />
-                 )}
-               </div>
-               <div className="col-span-2 space-y-1">
-                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Radiographer</label>
-                 <select value={formData.radiographer} onChange={e => setFormData({...formData, radiographer: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all appearance-none">
+             </div>
+
+             <div className="flex-[1.5] min-w-[120px] space-y-1.5 group">
+               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1 pl-1 group-focus-within:text-blue-600 transition-colors">
+                 Study
+               </label>
+               <input type="text" value={formData.filmType} onChange={e => setFormData({...formData, filmType: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-900 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all placeholder:text-slate-300" placeholder="Study" />
+             </div>
+
+             <div className="w-32 space-y-1.5 group">
+               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1 pl-1 group-focus-within:text-blue-600 transition-colors">
+                 Staff
+               </label>
+               <div className="relative">
+                 <select value={formData.radiographer} onChange={e => setFormData({...formData, radiographer: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-extrabold text-slate-900 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all appearance-none cursor-pointer">
                    {radiographers.length > 0 ? radiographers.map(rad => (
                      <option key={rad.id} value={rad.name}>{rad.name}</option>
                    )) : <option value="Technician">Technician</option>}
                  </select>
+                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
                </div>
              </div>
 
-             <div className="flex flex-col gap-3 justify-end">
-               <button type="submit" className="w-full bg-slate-900 text-white font-black py-2.5 rounded-lg active:scale-95 transition-all shadow-md text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                 <PlusCircle className="w-3.5 h-3.5" /> Push Record
-               </button>
+             <div className="flex items-end gap-2">
+               <div className="w-14 space-y-1.5 group">
+                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center block">Qty</label>
+                 <input type="number" min="1" value={formData.count} onChange={e => setFormData({...formData, count: parseInt(e.target.value) || 1})} className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-black text-slate-900 text-xs shadow-sm focus:bg-white focus:border-blue-500 transition-all text-center" />
+               </div>
+               <button type="submit" disabled={isSubmitting} className="bg-blue-600 text-white p-2.5 rounded-lg active:scale-95 transition-all shadow-md shadow-blue-600/20 hover:bg-blue-700 disabled:opacity-50">
+     {isSubmitting ? <Activity className="w-4 h-4 animate-spin" /> : (editingRecordId ? <Save className="w-4 h-4" /> : <PlusCircle className="w-4 h-4" />)}
+   </button>
+   {editingRecordId && (
+     <button type="button" onClick={() => { setEditingRecordId(null); setFormData({ ...formData, name: '', age: '', invoice: '', count: 1 }); }} className="p-2.5 bg-slate-100 text-slate-500 hover:text-slate-700 rounded-lg transition-colors border border-slate-200" title="Cancel Edit">
+       <X className="w-4 h-4" />
+     </button>
+   )}
              </div>
           </div>
         </form>
       </div>
 
-      {/* Patient Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col mt-4">
-        <div className="px-4 sm:px-6 py-2 sm:py-3 border-b border-gray-100 bg-slate-50/50 flex justify-between items-center shrink-0">
-          <h4 className="font-black text-slate-800 text-[9px] sm:text-xs tracking-widest uppercase flex items-center gap-2">
-            <User className="w-3.5 h-3.5 text-blue-500" />
-            Registry Trace
-          </h4>
-          <div className="flex items-center gap-2">
-             <span className="text-[8px] sm:text-[10px] font-black bg-white border border-slate-200 text-slate-400 px-2 py-0.5 rounded tracking-widest">{records.length} TOTAL</span>
-          </div>
-        </div>
+      {/* Patient Table with enhanced styling */}
+      <div className="bg-white rounded-sm shadow-2xl shadow-slate-200/40 border border-slate-200 overflow-hidden flex-1 flex flex-col relative">
         <div className="overflow-x-auto flex-1 custom-scrollbar">
-          <table className="w-full text-left text-xs whitespace-nowrap min-w-[800px]">
-            <thead className="bg-white text-slate-400 border-b border-gray-100 text-[9px] font-black tracking-widest uppercase">
-              <tr className="divide-x divide-slate-50">
-                <th className="px-4 py-3">DATE</th>
-                <th className="px-4 py-3">PATIENT NAME</th>
-                <th className="px-4 py-3 text-center">AGE</th>
-                <th className="px-4 py-3 text-center">INVOICE</th>
-                <th className="px-4 py-3 text-center">{department === 'DIGITAL X-RAY' ? 'STUDY' : 'DEPT'}</th>
-                <th className="px-4 py-3 text-center">FILM SIZE</th>
-                <th className="px-4 py-3 text-center">QTY</th>
-                <th className="px-4 py-3">TECH</th>
+          <table className="w-full text-left text-xs whitespace-nowrap min-w-[900px]">
+            <thead className="bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] sticky top-0 z-10 backdrop-blur-md border-b border-slate-100">
+              <tr>
+                <th className="px-8 py-4 text-left">Date</th>
+                <th className="px-8 py-4 text-left">Patient Details</th>
+                <th className="px-6 py-4 text-center">Age</th>
+                <th className="px-6 py-4 text-center font-bold text-blue-600">Invoice</th>
+                <th className="px-6 py-4 text-center">{department === 'DIGITAL X-RAY' ? 'Study' : 'Dept'}</th>
+                <th className="px-6 py-4 text-center">Size</th>
+                <th className="px-6 py-4 text-center">Qty</th>
+                <th className="px-8 py-4 text-left">Staff</th>
+                <th className="px-8 py-4 text-center">Edit</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100">
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-slate-300">
-                    <User className="w-8 h-8 mx-auto mb-2 opacity-10" />
-                    <p className="font-black uppercase tracking-widest text-[9px]">No data available</p>
+                  <td colSpan={9} className="px-8 py-32 text-center text-slate-300">
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex flex-col items-center"
+                    >
+                      <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 border-2 border-slate-100/50 shadow-inner">
+                        <UserCircle className="w-8 h-8 text-slate-200" />
+                      </div>
+                      <p className="font-bold uppercase tracking-[0.3em] text-[10px] text-slate-400">Empty Diagnostic Stream</p>
+                      <p className="text-[9px] font-medium text-slate-300 uppercase tracking-widest mt-2 font-mono">Ready for data entry</p>
+                    </motion.div>
                   </td>
                 </tr>
               ) : [...records].sort((a, b) => b.date.localeCompare(a.date)).map((record) => (
-                <tr key={record.id} className="hover:bg-blue-50/30 transition-colors divide-x divide-slate-50/50 group">
-                  <td className="px-4 py-2 font-bold text-slate-400 text-[10px] tabular-nums">{record.date}</td>
-                  <td className="px-4 py-2 font-black text-slate-800 text-xs uppercase">{record.name}</td>
-                  <td className="px-4 py-2 text-center font-bold text-slate-500 text-[10px] tabular-nums">{record.age}</td>
-                  <td className="px-4 py-2 text-center">
-                    <span className="font-mono text-[9px] font-black bg-slate-50 text-slate-400 px-1.5 py-0.5 rounded border border-slate-200/50 tabular-nums uppercase">{record.invoice}</span>
+                <tr key={record.id} className="hover:bg-slate-50/[0.4] transition-colors duration-200 border-b border-slate-50/50 last:border-0 group">
+                  <td className="px-8 py-4">
+                    <div className="text-[11px] font-bold text-slate-400 tabular-nums font-mono group-hover:text-blue-500 transition-colors">
+                      {record.date}
+                    </div>
                   </td>
-                  <td className="px-4 py-2 text-center">
-                    <span className="text-[9px] font-black text-slate-600 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-tighter italic">
-                      {record.filmType}
-                    </span>
+                  <td className="px-8 py-4">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-slate-800 text-sm leading-tight mb-0.5 group-hover:text-blue-600 transition-colors">{record.name || 'Anonymous Patient'}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1.5 py-0.5 bg-slate-100 rounded">ID Record</span>
+                        <div className="w-1 h-1 bg-slate-200 rounded-full" />
+                        <span className="text-[9px] font-mono text-slate-300 uppercase">#{record.id.slice(0, 8)}</span>
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-4 py-2 text-center">
-                    <span className={`text-[9px] font-black px-2 py-0.5 rounded border tracking-widest uppercase ${record.filmSize === '14x17' ? 'bg-purple-50 text-purple-600 border-purple-200/50' : record.filmSize === '11x14' ? 'bg-cyan-50 text-cyan-600 border-cyan-200/50' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
-                      {record.filmSize || record.filmType}
-                    </span>
+                  <td className="px-6 py-4 text-center">
+                    <span className="inline-flex items-center justify-center px-2.5 py-1 bg-white border border-slate-100 text-slate-700 rounded-sm font-bold text-xs shadow-sm ring-2 ring-slate-50/50">{record.age}</span>
                   </td>
-                  <td className="px-4 py-2 text-center">
-                    <span className="bg-slate-800 text-white py-0.5 px-2 rounded font-black text-[10px] tabular-nums">{record.count}</span>
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex flex-col items-center">
+                      <span className="font-bold text-blue-600/80 text-[11px] tracking-wider">{record.invoice}</span>
+                      <div className="h-[2px] w-3 bg-blue-100 rounded-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
                   </td>
-                  <td className="px-4 py-2 text-slate-400 font-bold text-[10px] tracking-tight truncate max-w-[100px] uppercase">{record.radiographer}</td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="inline-block px-3 py-1 bg-slate-800 text-white rounded-lg font-bold text-[9px] uppercase tracking-wider shadow-sm border border-slate-700">{record.filmType}</span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="font-bold text-slate-400 text-[10px] tracking-tight bg-slate-50/50 px-2 py-0.5 rounded border border-slate-100">{record.filmSize || '-'}</span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg font-bold text-[11px] border border-blue-100/50">
+                       <Hash className="w-3 h-3 opacity-50" />
+                       {record.count}
+                    </div>
+                  </td>
+                  <td className="px-8 py-4">
+                    <div className="flex items-center gap-2.5">
+                       <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border border-slate-200/50 shadow-sm">
+                          {record.radiographer.charAt(0)}
+                       </div>
+                       <span className="font-bold text-slate-600 text-[11px] uppercase tracking-widest">{record.radiographer}</span>
+                    </div>
+                  </td>
+                  <td className="px-8 py-4 text-center">
+                    <button 
+                      onClick={() => handleEditClick(record)}
+                      className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all active:scale-90 group/edit"
+                    >
+                      <Settings className="w-4 h-4 group-hover/edit:rotate-45 transition-transform" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      
     </motion.div>
   );
 }
@@ -1784,71 +2065,62 @@ function FilmSummaryDashboard({ view, selectedMonth, onMonthChange, stock14x17, 
   const StockTable = ({ title, filmType, data, totalUse, totalBalance, totalReceived, totalWaste }: { title: string, filmType: string, data: FilmStockDaily[], totalUse: number, totalBalance: number, totalReceived: number, totalWaste: number }) => {
     const handleUpdate = async (date: string, field: 'receive' | 'waste' | 'bf', value: string) => {
       const numValue = parseInt(value, 10) || 0;
-      const existing = manualStocks.find(s => s.filmType === filmType && s.date === date);
-      const stockEntry: ManualStockEntry = {
-        date,
-        filmType,
-        receive: existing?.receive || 0,
-        waste: existing?.waste || 0,
-        bf: (existing as any)?.bf
-      };
-      stockEntry[field] = numValue;
-      await updateManualStock(stockEntry);
+      await updateManualStock(date, filmType, { [field]: numValue });
     };
 
     return (
-      <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden flex flex-col h-[75vh]" id="printable-area">
-        <div className="bg-slate-900 border-b border-slate-800 relative overflow-hidden print-header shrink-0">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 -translate-y-1/2 translate-x-1/2" />
+      <div className="bg-white rounded-sm shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden flex flex-col h-[75vh]" id="printable-area">
+        <div className="bg-blue-50/50 border-b border-blue-100 relative overflow-hidden print-header shrink-0">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 -translate-y-1/2 translate-x-1/2" />
           <div className="p-4 lg:p-6 flex flex-col xl:flex-row gap-4 xl:items-center justify-between relative z-10">
-             <div className="flex items-center gap-3 lg:gap-4 text-white">
-                <div className="p-2 lg:p-3 bg-white/10 rounded-xl border border-white/10 shadow-inner">
-                  <FileBox className="w-5 h-5 lg:w-6 lg:h-6 text-blue-400" />
+             <div className="flex items-center gap-3 lg:gap-4 text-slate-800">
+                <div className="p-2 lg:p-3 bg-blue-100 text-blue-600 rounded-sm shadow-inner border border-blue-200">
+                  <FileBox className="w-5 h-5 lg:w-6 lg:h-6" />
                 </div>
                 <div>
                   <div className="flex items-center gap-3">
-                    <h3 className="text-sm lg:text-xl font-black tracking-widest uppercase">{title}</h3>
+                    <h3 className="text-sm lg:text-xl font-black tracking-widest uppercase text-slate-800">{title}</h3>
                     <input 
                       type="month" 
                       value={selectedMonth}
                       onChange={e => onMonthChange(e.target.value)}
-                      className="bg-slate-800 border border-slate-700 text-white text-[10px] lg:text-sm rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold"
+                      className="bg-white border border-slate-200 text-slate-800 text-[10px] lg:text-sm rounded-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold shadow-sm"
                     />
                   </div>
                   <p className="text-slate-500 font-bold tracking-widest text-[9px] lg:text-xs mt-1 uppercase">Inventory Stock Sheet</p>
                 </div>
              </div>
              <div className="flex flex-wrap gap-2 lg:gap-4 items-center">
-                <div className="bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 lg:px-5 py-2 lg:py-3 text-right shadow-sm backdrop-blur-sm">
+                <div className="bg-white border border-slate-200 rounded-sm px-3 lg:px-5 py-2 lg:py-3 text-right shadow-sm">
                   <p className="text-[8px] lg:text-[10px] text-slate-500 uppercase font-black tracking-widest mb-0.5 lg:mb-1">Receive</p>
-                  <p className="text-sm lg:text-xl font-black text-slate-200 leading-none">{totalReceived}</p>
+                  <p className="text-sm lg:text-xl font-black text-slate-800 leading-none">{totalReceived}</p>
                 </div>
-                <div className="bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 lg:px-5 py-2 lg:py-3 text-right shadow-sm backdrop-blur-sm hidden sm:block">
+                <div className="bg-white border border-slate-200 rounded-sm px-3 lg:px-5 py-2 lg:py-3 text-right shadow-sm hidden sm:block">
                   <p className="text-[8px] lg:text-[10px] text-slate-500 uppercase font-black tracking-widest mb-0.5 lg:mb-1">Wasted</p>
-                  <p className="text-sm lg:text-xl font-black text-slate-200 leading-none">{totalWaste}</p>
+                  <p className="text-sm lg:text-xl font-black text-slate-800 leading-none">{totalWaste}</p>
                 </div>
-                <div className="bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 lg:px-5 py-2 lg:py-3 text-right shadow-sm backdrop-blur-sm">
+                <div className="bg-white border border-slate-200 rounded-sm px-3 lg:px-5 py-2 lg:py-3 text-right shadow-sm">
                   <p className="text-[8px] lg:text-[10px] text-slate-500 uppercase font-black tracking-widest mb-0.5 lg:mb-1">Used</p>
-                  <p className="text-sm lg:text-xl font-black text-white leading-none">{totalUse}</p>
+                  <p className="text-sm lg:text-xl font-black text-blue-600 leading-none">{totalUse}</p>
                 </div>
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 lg:px-5 py-2 lg:py-3 text-right shadow-sm backdrop-blur-sm relative">
-                  {totalBalance <= 50 && totalBalance > 0 && <span className="absolute -top-1 -right-1 bg-orange-500 w-3 h-3 rounded-full border-2 border-slate-900 shadow-md"></span>}
-                  <p className="text-[8px] lg:text-[10px] text-blue-400/50 uppercase font-black tracking-widest mb-0.5 lg:mb-1">Balance</p>
-                  <p className={`text-base lg:text-2xl font-black leading-none ${totalBalance <= 0 ? 'text-red-400' : totalBalance <= 50 ? 'text-orange-400' : 'text-blue-400'}`}>{totalBalance}</p>
+                <div className="bg-blue-50/80 border border-blue-200 rounded-sm px-3 lg:px-5 py-2 lg:py-3 text-right shadow-sm relative">
+                  {totalBalance <= 50 && totalBalance > 0 && <span className="absolute -top-1 -right-1 bg-orange-500 w-3 h-3 rounded-full border-2 border-white shadow-md"></span>}
+                  <p className="text-[8px] lg:text-[10px] text-blue-700/60 uppercase font-black tracking-widest mb-0.5 lg:mb-1">Balance</p>
+                  <p className={`text-base lg:text-2xl font-black leading-none ${totalBalance <= 0 ? 'text-red-600' : totalBalance <= 50 ? 'text-orange-500' : 'text-blue-600'}`}>{totalBalance}</p>
                 </div>
-                <button onClick={() => window.print()} className="bg-white/10 hover:bg-white/20 border border-white/20 text-white p-2 lg:p-3 rounded-xl transition-all" title="Print Inventory">
+                <button onClick={() => window.print()} className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 p-2 lg:p-3 rounded-sm shadow-sm transition-all" title="Print Inventory">
                   <Printer className="w-4 h-4 lg:w-5 lg:h-5" />
                 </button>
              </div>
           </div>
 
-          <div className="grid grid-cols-6 gap-0 bg-slate-800 border-t border-slate-700/50 text-[8px] lg:text-[10px] font-black text-slate-500 uppercase tracking-widest relative z-10">
-            <div className="px-2 lg:px-4 py-2 lg:py-3 text-center">DATE</div>
-            <div className="px-2 lg:px-4 py-2 lg:py-3 bg-slate-700/30 text-center">B. FWD</div>
-            <div className="px-2 lg:px-4 py-2 lg:py-3 text-center">RECV</div>
-            <div className="px-2 lg:px-4 py-2 lg:py-3 bg-orange-900/10 text-orange-400/70 text-center">USE</div>
-            <div className="px-2 lg:px-4 py-2 lg:py-3 bg-red-900/10 text-red-400/70 text-center">WST</div>
-            <div className="px-2 lg:px-4 py-2 lg:py-3 bg-emerald-900/10 text-emerald-400 text-center">BAL</div>
+          <div className="grid grid-cols-6 gap-0 bg-slate-50/80 border-t border-slate-200/80 text-[8px] lg:text-[10px] font-black text-slate-500 uppercase tracking-widest relative z-10">
+            <div className="px-2 lg:px-4 py-2 lg:py-3 text-center border-r border-slate-200/50">DATE</div>
+            <div className="px-2 lg:px-4 py-2 lg:py-3 bg-slate-100/50 text-center border-r border-slate-200/50">B. FWD</div>
+            <div className="px-2 lg:px-4 py-2 lg:py-3 text-center border-r border-slate-200/50">RECV</div>
+            <div className="px-2 lg:px-4 py-2 lg:py-3 bg-amber-50 text-amber-700/70 text-center border-r border-slate-200/50">USE</div>
+            <div className="px-2 lg:px-4 py-2 lg:py-3 bg-red-50 text-red-600/70 text-center border-r border-slate-200/50">WST</div>
+            <div className="px-2 lg:px-4 py-2 lg:py-3 bg-emerald-50 text-emerald-600 text-center">BAL</div>
           </div>
         </div>
         
@@ -1857,31 +2129,31 @@ function FilmSummaryDashboard({ view, selectedMonth, onMonthChange, stock14x17, 
           {data.map((row) => (
             <div key={row.date} className="grid grid-cols-6 gap-0 text-[10px] lg:text-sm border-b border-slate-200/40 hover:bg-white transition-colors relative z-10 divide-x divide-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
               <div className="px-2 lg:px-4 py-2 lg:py-3 text-slate-400 font-bold text-center flex items-center justify-center">{row.date.split('-')[2]}</div>
-              <div className="p-0.5 lg:p-1 bg-slate-100/20">
+              <div className="p-1 lg:p-2 bg-slate-100/20">
                 <input 
                   type="number" min="0" 
-                  value={row.bf || ''} 
+                  value={row.bf ?? ''} 
                   onChange={(e) => handleUpdate(row.date, 'bf', e.target.value)}
-                  className="w-full h-full text-center py-1 lg:py-2 bg-transparent hover:bg-white text-slate-700 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500/30 rounded font-black transition-all placeholder:text-slate-200"
+                  className="w-full h-full text-center py-2 lg:py-3 bg-white/50 border-2 border-transparent hover:border-blue-500/30 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/5 rounded-sm font-black text-slate-700 transition-all placeholder:text-slate-200 shadow-sm"
                   placeholder="-"
                 />
               </div>
-              <div className="items-center justify-center p-0.5 lg:p-1 bg-white">
+              <div className="items-center justify-center p-1 lg:p-2 bg-white">
                 <input 
                   type="number" min="0" 
-                  value={row.receive || ''} 
+                  value={row.receive ?? ''} 
                   onChange={(e) => handleUpdate(row.date, 'receive', e.target.value)}
-                  className="w-full h-full text-center py-1 lg:py-2 bg-transparent hover:bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500/30 rounded font-black text-slate-800 transition-all placeholder:text-slate-200"
+                  className="w-full h-full text-center py-2 lg:py-3 bg-slate-50 border-2 border-transparent hover:border-blue-500/30 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/5 rounded-sm font-black text-slate-800 transition-all placeholder:text-slate-200 shadow-sm"
                   placeholder="-"
                 />
               </div>
-              <div className="px-2 lg:px-4 py-2 lg:py-3 text-orange-600 text-center font-black bg-orange-50/20 flex items-center justify-center">{row.use || '-'}</div>
-              <div className="p-0.5 lg:p-1 bg-white">
+              <div className="px-2 lg:px-4 py-2 lg:py-3 text-orange-600 text-center font-black bg-orange-50/20 flex items-center justify-center uppercase tracking-tighter italic">{row.use || '-'}</div>
+              <div className="p-1 lg:p-2 bg-white">
                 <input 
                   type="number" min="0" 
-                  value={row.waste || ''} 
+                  value={row.waste ?? ''} 
                   onChange={(e) => handleUpdate(row.date, 'waste', e.target.value)}
-                  className="w-full h-full text-center py-1 lg:py-2 bg-transparent hover:bg-red-50 text-red-600 focus:bg-white focus:outline-none focus:ring-1 focus:ring-red-500/30 rounded font-black transition-all placeholder:text-slate-200"
+                  className="w-full h-full text-center py-2 lg:py-3 bg-red-50/50 border-2 border-transparent hover:border-red-500/30 focus:border-red-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-red-500/5 rounded-sm font-black text-red-600 transition-all placeholder:text-slate-200 shadow-sm"
                   placeholder="-"
                 />
               </div>
@@ -2122,7 +2394,7 @@ function DataManagementDashboard({ records, onDeleteRecord, onAddRecord }: { rec
       initial={{ opacity: 0, y: 15 }} 
       animate={{ opacity: 1, y: 0 }} 
       exit={{ opacity: 0, y: -15 }}
-      className="space-y-4 flex flex-col h-full bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden"
+      className="flex flex-col h-full bg-white rounded-sm shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden"
     >
       <div className="bg-slate-900 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative overflow-hidden shrink-0">
         <div className="absolute top-0 left-0 w-64 h-64 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 -translate-y-1/2 -translate-x-1/2" />
@@ -2266,7 +2538,7 @@ function SystemSettingsDashboard({ records }: { records: PatientRecord[] }) {
       initial={{ opacity: 0, y: 15 }} 
       animate={{ opacity: 1, y: 0 }} 
       exit={{ opacity: 0, y: -15 }}
-      className="space-y-4 flex flex-col h-full bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden"
+      className="flex flex-col h-full bg-white rounded-sm shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden"
     >
       <div className="bg-slate-900 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative overflow-hidden shrink-0">
         <div className="absolute top-0 left-0 w-64 h-64 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 -translate-y-1/2 -translate-x-1/2" />
@@ -2290,7 +2562,7 @@ function SystemSettingsDashboard({ records }: { records: PatientRecord[] }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Hospital Title</label>
-                    <input type="text" defaultValue="General Hospital Dept." className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm" />
+                    <input type="text" defaultValue="General Hospital Dept." className="w-full px-3 py-2 bg-white border border-slate-200 rounded-sm outline-none font-bold text-slate-800 text-xs shadow-sm" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Sync ID</label>
@@ -2298,7 +2570,7 @@ function SystemSettingsDashboard({ records }: { records: PatientRecord[] }) {
                   </div>
                 </div>
                 <div className="pt-2">
-                  <button className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg font-black tracking-widest text-[10px] uppercase transition-all shadow hover:bg-blue-600">
+                  <button className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-sm font-black tracking-widest text-[10px] uppercase transition-all shadow hover:bg-blue-600">
                     <Save className="w-3.5 h-3.5" />
                     Commit Changes
                   </button>
@@ -2311,7 +2583,7 @@ function SystemSettingsDashboard({ records }: { records: PatientRecord[] }) {
                 Operational Prefs
               </h4>
               <div className="space-y-2">
-                <label className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                <label className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-sm cursor-pointer hover:bg-slate-50 transition-colors">
                   <div>
                     <p className="font-black text-slate-700 text-[11px] uppercase tracking-tighter">Low Inventory Warnings</p>
                     <p className="text-[9px] text-slate-400 mt-0.5 font-bold">Alert when film stock &lt; 50 units.</p>
@@ -2321,7 +2593,7 @@ function SystemSettingsDashboard({ records }: { records: PatientRecord[] }) {
                     <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
                   </div>
                 </label>
-                <label className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                <label className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-sm cursor-pointer hover:bg-slate-50 transition-colors">
                   <div>
                     <p className="font-black text-slate-700 text-[11px] uppercase tracking-tighter">Aggressive Compaction</p>
                     <p className="text-[9px] text-slate-400 mt-0.5 font-bold">Use dense data views by default.</p>
@@ -2335,7 +2607,7 @@ function SystemSettingsDashboard({ records }: { records: PatientRecord[] }) {
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-2">
             <div className="bg-blue-50/20 rounded-lg border border-blue-100 p-4">
               <h4 className="text-[10px] font-black text-blue-900 uppercase tracking-widest border-b border-blue-200/50 pb-3 mb-4">
                 Archive Engine
@@ -2366,7 +2638,7 @@ function SystemSettingsDashboard({ records }: { records: PatientRecord[] }) {
               <p className="text-[10px] text-red-400 font-bold leading-tight mb-3">Irreversible record purge. Minimal recovery possibility.</p>
               <button 
                 onClick={() => alert("Restricted: Administrative Clearance Failure.")}
-                className="w-full flex items-center justify-center gap-2 bg-white border border-red-200 text-red-600 px-3 py-2 rounded-lg font-black tracking-widest text-[9px] uppercase transition-all hover:bg-red-50"
+                className="w-full flex items-center justify-center gap-2 bg-white border border-red-200 text-red-600 px-3 py-2 rounded-sm font-black tracking-widest text-[9px] uppercase transition-all hover:bg-red-50"
               >
                 <Trash2 className="w-3 h-3" />
                 Purge All Data
@@ -2409,7 +2681,7 @@ function HospitalSettingsDashboard({ systemSettings }: { systemSettings: SystemS
       initial={{ opacity: 0, y: 15 }} 
       animate={{ opacity: 1, y: 0 }} 
       exit={{ opacity: 0, y: -15 }}
-      className="space-y-4 flex flex-col h-full bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden"
+      className="flex flex-col h-full bg-white rounded-sm shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden"
     >
       <div className="bg-slate-900 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative overflow-hidden shrink-0">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 -translate-y-1/2 translate-x-1/2" />
@@ -2439,33 +2711,33 @@ function HospitalSettingsDashboard({ systemSettings }: { systemSettings: SystemS
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-           <div className="space-y-4">
+           <div className="space-y-2">
              <div className="bg-slate-50/30 rounded-lg border border-slate-200 p-4">
                <h4 className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200/50 pb-3 mb-4">Identity Matrix</h4>
                <div className="space-y-3">
                  <div className="space-y-1">
                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Facility Name</label>
-                   <input type="text" value={formData.hospitalName} onChange={e => setFormData({...formData, hospitalName: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm" />
+                   <input type="text" value={formData.hospitalName} onChange={e => setFormData({...formData, hospitalName: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-sm outline-none font-bold text-slate-800 text-xs shadow-sm" />
                  </div>
                  <div className="space-y-1">
                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Tab Title</label>
-                   <input type="text" value={formData.browserTitle} onChange={e => setFormData({...formData, browserTitle: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm" />
+                   <input type="text" value={formData.browserTitle} onChange={e => setFormData({...formData, browserTitle: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-sm outline-none font-bold text-slate-800 text-xs shadow-sm" />
                  </div>
                </div>
              </div>
            </div>
            
-           <div className="space-y-4">
+           <div className="space-y-2">
              <div className="bg-slate-50/30 rounded-lg border border-slate-200 p-4">
                <h4 className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200/50 pb-3 mb-4">Metadata & Disclaimers</h4>
                <div className="space-y-3">
                  <div className="space-y-1">
                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Copyright Signature</label>
-                   <input type="text" value={formData.footerCopyright} onChange={e => setFormData({...formData, footerCopyright: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm" />
+                   <input type="text" value={formData.footerCopyright} onChange={e => setFormData({...formData, footerCopyright: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-sm outline-none font-bold text-slate-800 text-xs shadow-sm" />
                  </div>
                  <div className="space-y-1">
                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Security Note</label>
-                   <textarea rows={2} value={formData.footerDisclaimer} onChange={e => setFormData({...formData, footerDisclaimer: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm resize-none" />
+                   <textarea rows={2} value={formData.footerDisclaimer} onChange={e => setFormData({...formData, footerDisclaimer: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-sm outline-none font-bold text-slate-800 text-xs shadow-sm resize-none" />
                  </div>
                </div>
              </div>
@@ -2477,11 +2749,11 @@ function HospitalSettingsDashboard({ systemSettings }: { systemSettings: SystemS
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <div className="space-y-1">
                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Contact Line</label>
-                   <input type="text" value={formData.contactPhone || ''} onChange={e => setFormData({...formData, contactPhone: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm" />
+                   <input type="text" value={formData.contactPhone || ''} onChange={e => setFormData({...formData, contactPhone: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-sm outline-none font-bold text-slate-800 text-xs shadow-sm" />
                  </div>
                  <div className="space-y-1">
                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Physical Address</label>
-                   <input type="text" value={formData.address || ''} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm" />
+                   <input type="text" value={formData.address || ''} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-sm outline-none font-bold text-slate-800 text-xs shadow-sm" />
                  </div>
                </div>
              </div>
@@ -2490,8 +2762,8 @@ function HospitalSettingsDashboard({ systemSettings }: { systemSettings: SystemS
            <div className="md:col-span-2">
              <div className="bg-slate-50/30 rounded-lg border border-slate-200 p-4">
                <h4 className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200/50 pb-3 mb-4">Welcome Overlay Visibility</h4>
-               <div className="space-y-4">
-                 <label className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+               <div className="space-y-2">
+                 <label className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-sm cursor-pointer hover:bg-slate-50 transition-colors">
                    <div>
                      <p className="font-black text-slate-700 text-[11px] uppercase tracking-tighter">Display Welcome Modal</p>
                      <p className="text-[9px] text-slate-400 mt-0.5 font-bold uppercase tracking-widest">Show popup once per authenticated session.</p>
@@ -2510,11 +2782,11 @@ function HospitalSettingsDashboard({ systemSettings }: { systemSettings: SystemS
                  <div className={`space-y-4 transition-all ${formData.showWelcomePopup ? 'opacity-100' : 'opacity-40 grayscale pointer-events-none'}`}>
                     <div className="space-y-1">
                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Modal Primary Title</label>
-                      <input type="text" value={formData.welcomeTitle || ''} onChange={e => setFormData({...formData, welcomeTitle: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm" placeholder="Ex: Welcome back to the Registry" />
+                      <input type="text" value={formData.welcomeTitle || ''} onChange={e => setFormData({...formData, welcomeTitle: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-sm outline-none font-bold text-slate-800 text-xs shadow-sm" placeholder="Ex: Welcome back to the Registry" />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Detailed Message Content</label>
-                      <textarea rows={3} value={formData.welcomeMessage || ''} onChange={e => setFormData({...formData, welcomeMessage: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm resize-none" placeholder="Enter greeting message..." />
+                      <textarea rows={3} value={formData.welcomeMessage || ''} onChange={e => setFormData({...formData, welcomeMessage: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-sm outline-none font-bold text-slate-800 text-xs shadow-sm resize-none" placeholder="Enter greeting message..." />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Visual Theme Variant</label>
@@ -2533,7 +2805,7 @@ function HospitalSettingsDashboard({ systemSettings }: { systemSettings: SystemS
                     </div>
                     <div className="space-y-1">
                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Background Image URL</label>
-                      <input type="text" value={formData.welcomeImageUrl || ''} onChange={e => setFormData({...formData, welcomeImageUrl: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-slate-800 text-xs shadow-sm" placeholder="https://images.unsplash.com/..." />
+                      <input type="text" value={formData.welcomeImageUrl || ''} onChange={e => setFormData({...formData, welcomeImageUrl: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-sm outline-none font-bold text-slate-800 text-xs shadow-sm" placeholder="https://images.unsplash.com/..." />
                     </div>
                  </div>
                </div>
@@ -2617,7 +2889,7 @@ function RadiographersDashboard({ radiographers }: { radiographers: Radiographer
       initial={{ opacity: 0, y: 15 }} 
       animate={{ opacity: 1, y: 0 }} 
       exit={{ opacity: 0, y: -15 }}
-      className="space-y-4 flex flex-col h-full bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden"
+      className="flex flex-col h-full bg-white rounded-sm shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden"
     >
       <div className="bg-slate-900 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative overflow-hidden shrink-0">
         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 -translate-y-1/2 translate-x-1/2" />
@@ -2630,34 +2902,59 @@ function RadiographersDashboard({ radiographers }: { radiographers: Radiographer
       </div>
       
       <div className="px-4 sm:px-8 mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4 pb-4 overflow-y-auto custom-scrollbar flex-1">
-        <div className="lg:col-span-1 border border-slate-200 rounded-lg bg-slate-50 overflow-hidden self-start sticky top-0 z-20">
-          <div className="bg-slate-100/50 border-b border-slate-200 px-4 py-3">
-            <h4 className="font-black text-slate-500 tracking-widest text-[9px] uppercase flex items-center gap-2">
+        <div className="lg:col-span-1 border-2 border-slate-200/50 rounded-sm bg-white/50 backdrop-blur-sm self-start sticky top-0 z-20 shadow-xl shadow-slate-200/20 overflow-hidden">
+          <div className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-white/5 px-6 py-4">
+            <h4 className="font-black text-white tracking-[0.1em] text-xs uppercase flex items-center gap-2">
+              <PlusCircle className="w-4 h-4 text-blue-400" />
               New Operator
             </h4>
           </div>
-          <form onSubmit={handleAdd} className="p-4 space-y-3">
-            {errorMsg && <div className="p-2 bg-red-50 text-red-600 text-[9px] font-black rounded border border-red-100 uppercase">{errorMsg}</div>}
+          <form onSubmit={handleAdd} className="p-6 space-y-4">
+            {errorMsg && <div className="p-3 bg-red-50 text-red-600 text-[10px] font-black rounded-sm border border-red-100 uppercase animate-pulse">{errorMsg}</div>}
             
-            <div className="flex gap-1.5 p-1 bg-white border border-slate-200 rounded-lg shrink-0">
-              <button type="button" onClick={() => setRole('radiographer')} className={`flex-1 py-1.5 text-[8px] font-black uppercase tracking-widest rounded transition-all ${role === 'radiographer' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-50'}`}>Radiographer</button>
-              <button type="button" onClick={() => setRole('admin')} className={`flex-1 py-1.5 text-[8px] font-black uppercase tracking-widest rounded transition-all ${role === 'admin' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-50'}`}>Admin</button>
+            <div className="flex gap-1.5 p-1 bg-slate-100 border border-slate-200 rounded-sm shrink-0">
+              <button 
+                type="button" 
+                onClick={() => setRole('radiographer')} 
+                className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${role === 'radiographer' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:bg-white hover:text-slate-600'}`}
+              >
+                Radiographer
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setRole('admin')} 
+                className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${role === 'admin' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:bg-white hover:text-slate-600'}`}
+              >
+                Admin
+              </button>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Full Name</label>
-              <input type="text" required value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500/30 outline-none font-bold text-slate-800 text-xs" placeholder="John Doe" />
+            <div className="space-y-1.5 group">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1 group-focus-within:text-blue-500 transition-colors">Full Name</label>
+              <input type="text" required value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-2.5 bg-white border-2 border-slate-100 rounded-sm focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 outline-none font-bold text-slate-800 text-xs shadow-sm transition-all" placeholder="John Doe" />
             </div>
-            <div className="space-y-1">
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Login ID</label>
-              <input type="text" required value={username} onChange={e => setUsername(e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500/30 outline-none font-bold text-slate-800 text-xs" placeholder="jdoe" />
+            <div className="space-y-1.5 group">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1 group-focus-within:text-blue-500 transition-colors">Login ID</label>
+              <input type="text" required value={username} onChange={e => setUsername(e.target.value)} className="w-full px-4 py-2.5 bg-white border-2 border-slate-100 rounded-sm focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 outline-none font-bold text-slate-800 text-xs shadow-sm transition-all" placeholder="jdoe" />
             </div>
-            <div className="space-y-1">
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block pl-1">Password</label>
-              <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500/30 outline-none font-bold text-slate-800 text-xs" placeholder="••••••••" />
+            <div className="space-y-1.5 group">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1 group-focus-within:text-blue-500 transition-colors">Password</label>
+              <div className="relative">
+                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full px-4 py-2.5 bg-white border-2 border-slate-100 rounded-sm focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 outline-none font-bold text-slate-800 text-xs shadow-sm transition-all" placeholder="••••••••" />
+                <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
+              </div>
             </div>
-            <button type="submit" disabled={isLoading} className="w-full mt-2 bg-slate-900 border border-slate-800 text-white font-black py-2.5 px-4 rounded-lg transition-all shadow-sm active:scale-[0.98] text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-              {isLoading ? 'Creating...' : <><PlusCircle className="w-3.5 h-3.5" /> Save User</>}
+            <button type="submit" disabled={isLoading} className="w-full mt-2 bg-blue-600 border border-blue-500 text-white font-black py-3 px-4 rounded-sm transition-all shadow-xl shadow-blue-600/20 active:scale-[0.98] text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-blue-700">
+              {isLoading ? (
+                <Activity className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <div className="p-1 bg-white/20 rounded shadow-inner">
+                    <Plus className="w-3.5 h-3.5" />
+                  </div>
+                  Save Identity
+                </>
+              )}
             </button>
           </form>
         </div>
@@ -2673,7 +2970,7 @@ function RadiographersDashboard({ radiographers }: { radiographers: Radiographer
                </div>
             )}
             {radiographers.map(rad => (
-              <div key={rad.id} className={`bg-white border p-3 rounded-lg transition-all shadow-sm flex flex-col sm:flex-row gap-3 sm:items-center justify-between ${!rad.isActive ? 'border-red-100 bg-red-50/10 opacity-70' : 'border-slate-200'}`}>
+              <div key={rad.id} className={`bg-white border p-3 rounded-sm transition-all shadow-sm flex flex-col sm:flex-row gap-3 sm:items-center justify-between ${!rad.isActive ? 'border-red-100 bg-red-50/10 opacity-70' : 'border-slate-200'}`}>
                 {editingId === rad.id ? (
                   <div className="flex-1 space-y-2">
                     <div className="grid grid-cols-2 gap-2">
@@ -2759,10 +3056,10 @@ function LoginSettingsDashboard({ systemSettings }: { systemSettings: SystemSett
       exit={{ opacity: 0, y: -15 }}
       className="max-w-4xl mx-auto space-y-8 pb-12"
     >
-      <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-sm shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
         <div className="bg-slate-900 px-8 py-6 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+            <div className="p-3 bg-emerald-500/10 rounded-sm border border-emerald-500/20">
               <LogIn className="w-6 h-6 text-emerald-400" />
             </div>
             <div>
@@ -2773,7 +3070,7 @@ function LoginSettingsDashboard({ systemSettings }: { systemSettings: SystemSett
           <button 
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-6 py-2.5 rounded-xl font-bold text-sm tracking-wider transition-all shadow-lg shadow-emerald-600/20"
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-6 py-2.5 rounded-sm font-bold text-sm tracking-wider transition-all shadow-lg shadow-emerald-600/20"
           >
             {isSaving ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -2786,7 +3083,7 @@ function LoginSettingsDashboard({ systemSettings }: { systemSettings: SystemSett
 
         <form onSubmit={handleSave} className="p-8 space-y-8">
           {saveMessage && (
-            <div className={`p-4 rounded-xl text-sm font-bold flex items-center gap-3 ${saveMessage.includes('Error') ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
+            <div className={`p-4 rounded-sm text-sm font-bold flex items-center gap-3 ${saveMessage.includes('Error') ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
               {saveMessage.includes('Error') ? <AlertTriangle className="w-5 h-5" /> : <Shield className="w-5 h-5" />}
               {saveMessage}
             </div>
@@ -2806,13 +3103,13 @@ function LoginSettingsDashboard({ systemSettings }: { systemSettings: SystemSett
                     type="text" 
                     value={formData.loginLogoUrl || ''}
                     onChange={e => setFormData({ ...formData, loginLogoUrl: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all font-semibold text-slate-800"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all font-semibold text-slate-800"
                     placeholder="https://example.com/logo.png"
                   />
                   <p className="text-[10px] text-slate-400 font-medium">This logo appears on the main sign-in page.</p>
                 </div>
                 
-                <div className="flex items-center justify-center p-4 bg-slate-100 rounded-xl border border-dashed border-slate-300">
+                <div className="flex items-center justify-center p-4 bg-slate-100 rounded-sm border border-dashed border-slate-300">
                    {formData.loginLogoUrl ? (
                      <img src={formData.loginLogoUrl} alt="Login Preview" className="max-h-20 object-contain" referrerPolicy="no-referrer" />
                    ) : (
@@ -2828,13 +3125,13 @@ function LoginSettingsDashboard({ systemSettings }: { systemSettings: SystemSett
                     type="text" 
                     value={formData.adminLogoUrl || ''}
                     onChange={e => setFormData({ ...formData, adminLogoUrl: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all font-semibold text-slate-800"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all font-semibold text-slate-800"
                     placeholder="https://example.com/admin-logo.png"
                   />
                   <p className="text-[10px] text-slate-400 font-medium">This logo appears in the top-left of the sidebar.</p>
                 </div>
                 
-                <div className="flex items-center justify-center p-4 bg-slate-100 rounded-xl border border-dashed border-slate-300">
+                <div className="flex items-center justify-center p-4 bg-slate-100 rounded-sm border border-dashed border-slate-300">
                    {formData.adminLogoUrl ? (
                      <img src={formData.adminLogoUrl} alt="Admin Preview" className="max-h-20 object-contain" referrerPolicy="no-referrer" />
                    ) : (
@@ -2850,13 +3147,13 @@ function LoginSettingsDashboard({ systemSettings }: { systemSettings: SystemSett
                     type="text" 
                     value={formData.faviconUrl || ''}
                     onChange={e => setFormData({ ...formData, faviconUrl: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all font-semibold text-slate-800"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all font-semibold text-slate-800"
                     placeholder="https://example.com/favicon.ico"
                   />
                   <p className="text-[10px] text-slate-400 font-medium">The small icon shown in the browser tab.</p>
                 </div>
                 
-                <div className="flex items-center justify-center p-4 bg-slate-100 rounded-xl border border-dashed border-slate-300">
+                <div className="flex items-center justify-center p-4 bg-slate-100 rounded-sm border border-dashed border-slate-300">
                    {formData.faviconUrl ? (
                      <img src={formData.faviconUrl} alt="Favicon Preview" className="w-8 h-8 object-contain" referrerPolicy="no-referrer" />
                    ) : (

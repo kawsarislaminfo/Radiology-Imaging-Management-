@@ -166,6 +166,15 @@ export const deletePatientRecord = async (recordId: string) => {
   }
 };
 
+export const updatePatientRecord = async (recordId: string, updates: Partial<PatientRecord>) => {
+  if (!auth.currentUser) throw new Error('Not authenticated');
+  try {
+    await setDoc(doc(db, 'patientRecords', recordId), { ...updates, updatedAt: serverTimestamp() }, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, 'patientRecords');
+  }
+};
+
 export interface ManualStockEntry {
   date: string;
   filmType: string;
@@ -189,17 +198,18 @@ export const subscribeToManualStocks = (onUpdate: (stocks: ManualStockEntry[]) =
   });
 };
 
-export const updateManualStock = async (stock: ManualStockEntry) => {
+export const updateManualStock = async (date: string, filmType: string, updates: Partial<ManualStockEntry>) => {
   if (!auth.currentUser) throw new Error('Not authenticated');
-  const stockId = `${stock.date}_${stock.filmType}`;
+  const stockId = `${date}_${filmType}`;
   try {
-    const finalStock = {
-      ...stock,
-      use: 0, // Keep 'use' at 0 in this doc, calculated dynamically
+    const finalUpdate = {
+      ...updates,
+      date,
+      filmType,
       userId: auth.currentUser.uid,
       updatedAt: serverTimestamp()
     };
-    await setDoc(doc(db, 'filmStocks', stockId), finalStock);
+    await setDoc(doc(db, 'filmStocks', stockId), finalUpdate, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, 'filmStocks');
   }

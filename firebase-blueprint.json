@@ -97,6 +97,10 @@
     "filmStocks/{stockId}": {
       "schema": { "$ref": "#/entities/filmStock" },
       "description": "Store film stock updates"
+    },
+    "test/connection": {
+      "schema": { "type": "object", "properties": {} },
+      "description": "Used for connectivity tests"
     }
   }
 }
