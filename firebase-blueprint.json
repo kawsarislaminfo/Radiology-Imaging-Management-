@@ -17,6 +17,35 @@
       },
       "required": ["name", "username", "role", "isActive", "userId", "createdAt"]
     },
+    "systemSettings": {
+      "title": "System Settings",
+      "description": "General system configuration including titles and footers.",
+      "type": "object",
+      "properties": {
+        "browserTitle": { "type": "string" },
+        "hospitalName": { "type": "string" },
+        "footerCopyright": { "type": "string" },
+        "footerDisclaimer": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "loginLogoUrl": { "type": "string" },
+        "faviconUrl": { "type": "string" },
+        "adminLogoUrl": { "type": "string" },
+        "contactPhone": { "type": "string" },
+        "address": { "type": "string" },
+        "bottomNav": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "iconName": { "type": "string" },
+              "isEnabled": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
     "patientRecord": {
       "title": "Patient Record",
       "description": "A single patient record associated with a department.",
@@ -52,6 +81,10 @@
     }
   },
   "firestore": {
+    "settings/general": {
+      "schema": { "$ref": "#/entities/systemSettings" },
+      "description": "Store general system configuration"
+    },
     "radiographers/{radId}": {
       "schema": { "$ref": "#/entities/radiographer" },
       "description": "Store radiographer user details"

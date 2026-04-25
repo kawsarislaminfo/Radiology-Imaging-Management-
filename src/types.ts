@@ -1,4 +1,4 @@
-export type Department = 'DASHBOARD' | 'X-RAY 14x17' | 'X-RAY 11x14' | 'OPG' | 'CT-SCAN' | 'FILM SUMMARY' | 'FILM SUMMARY 14x17' | 'FILM SUMMARY 11x14' | 'DATA MANAGEMENT' | 'RADIOGRAPHERS' | 'SYSTEM SETTINGS' | 'SYSTEM SETTINGS GENERAL' | 'SYSTEM SETTINGS HOSPITAL';
+export type Department = 'DASHBOARD' | 'X-RAY 14x17' | 'X-RAY 11x14' | 'OPG' | 'CT-SCAN' | 'FILM SUMMARY' | 'FILM SUMMARY 14x17' | 'FILM SUMMARY 11x14' | 'DATA MANAGEMENT' | 'RADIOGRAPHERS' | 'SYSTEM SETTINGS' | 'SYSTEM SETTINGS GENERAL' | 'SYSTEM SETTINGS HOSPITAL' | 'SYSTEM SETTINGS LOGIN' | 'SYSTEM SETTINGS BOTTOMNAV';
 
 export interface PatientRecord {
   id: string;
@@ -30,4 +30,25 @@ export interface Radiographer {
   role: 'admin' | 'radiographer';
   isActive: boolean;
   createdAt: number;
+}
+
+export interface BottomNavItem {
+  id: Department;
+  label: string;
+  iconName: string;
+  isEnabled: boolean;
+}
+
+export interface SystemSettings {
+  browserTitle: string;
+  hospitalName: string;
+  footerCopyright: string;
+  footerDisclaimer: string;
+  logoUrl?: string; // This will now represent the admin panel logo
+  loginLogoUrl?: string;
+  faviconUrl?: string;
+  adminLogoUrl?: string;
+  contactPhone?: string;
+  address?: string;
+  bottomNav?: BottomNavItem[];
 }

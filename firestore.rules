@@ -21,8 +21,9 @@ service cloud.firestore {
 
     // Role check: Bootstrapped admin
     function isAdmin() {
-      return isVerified() && (
-        request.auth.token.email == 'ebsoftopd@gmail.com'
+      return isSignedIn() && (
+        request.auth.token.email == 'ebsoftopd@gmail.com' ||
+        request.auth.token.email == 'navil@radiographer.app'
       );
     }
 
@@ -78,6 +79,11 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create, update: if isVerified() && isValidId(stockId) && isValidFilmStock(incoming());
       allow delete: if isAdmin();
+    }
+
+    match /settings/general {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // Radiographers

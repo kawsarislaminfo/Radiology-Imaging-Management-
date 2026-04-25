@@ -1,6 +1,34 @@
 import { collection, doc, query, where, getDocs, setDoc, onSnapshot, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, auth } from './firebase';
-import { Radiographer, PatientRecord, Department } from '../types';
+import { Radiographer, PatientRecord, Department, SystemSettings } from '../types';
+
+export const subscribeToSystemSettings = (onUpdate: (settings: SystemSettings) => void) => {
+  const docRef = doc(db, 'settings', 'general');
+  return onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      onUpdate(docSnap.data() as SystemSettings);
+    } else {
+      // Default settings if none exist
+      onUpdate({
+        browserTitle: 'Sajeda Jabber Hospital Dashboard',
+        hospitalName: 'SAJEDA JABBER HOSPITAL LTD',
+        footerCopyright: '© 2026 Sajeda Jabber Hospital Ltd. All rights reserved.',
+        footerDisclaimer: 'Confidential medical information. For authorized personnel only.'
+      });
+    }
+  }, (error) => {
+    handleFirestoreError(error, OperationType.GET, 'settings/general');
+  });
+};
+
+export const updateSystemSettings = async (settings: SystemSettings) => {
+  if (!auth.currentUser) throw new Error('Not authenticated');
+  try {
+    await setDoc(doc(db, 'settings', 'general'), settings, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, 'settings/general');
+  }
+};
 
 export const subscribeToRadiographers = (onUpdate: (rads: Radiographer[]) => void) => {
   if (!auth.currentUser) return () => {};
